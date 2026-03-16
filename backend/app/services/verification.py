@@ -6,7 +6,7 @@ from sqlalchemy import select
 
 from app.config import get_settings
 from app.database import SessionLocal
-from app.models import EvidenceItemRecord, StoredAnalysisPayload, VerificationRequest, VerificationResult
+from app.models import EvidenceItemRecord, StoredAnalysisPayload, User, VerificationRequest, VerificationResult
 from app.schemas import AnalysisPayload
 from app.services.analyzers import BinaryArtifactInput, analyze_binary_artifact, analyze_news
 from app.services.job_store import job_store
@@ -69,8 +69,16 @@ def run_request_analysis(task_input: VerificationTaskInput) -> None:
 
         _persist_result(db=db, request_id=task_input.request_id, result_payload=result_payload)
         request.status = "completed"
-        request.user.monthly_usage += 1
         db.commit()
+        # Usage tracking should never flip a successful analysis into a failed job.
+        try:
+            db.refresh(request)
+            user = db.get(User, request.user_id)
+            if user is not None:
+                user.monthly_usage += 1
+                db.commit()
+        except Exception:
+            db.rollback()
         job_store.update(
             task_input.task_id,
             status="completed",
