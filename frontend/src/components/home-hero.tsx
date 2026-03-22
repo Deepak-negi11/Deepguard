@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import { ArrowRight, AudioLines, Newspaper, ScanSearch, ShieldAlert, Video } from 'lucide-react';
+import { ArrowRight, AudioLines, Newspaper, ScanSearch, ShieldAlert, ImagePlus } from 'lucide-react';
 
 const lanes = [
-  { icon: Video, title: 'Video', detail: 'Frame anomalies, temporal drift, and manipulated facial regions.' },
+  { icon: ImagePlus, title: 'Image', detail: 'Pixel noise, EXIF anomalies, and inserted regional manipulation.' },
   { icon: Newspaper, title: 'News', detail: 'Credibility scoring, rhetoric analysis, and source reputation.' },
   { icon: AudioLines, title: 'Audio', detail: 'Spectral artifacts, prosody irregularities, and voice-clone signals.' },
 ];
@@ -22,13 +22,16 @@ export function HomeHero() {
               Investigate suspicious media like an editorial forensic desk, not a toy detector.
             </h1>
             <p className="max-w-2xl text-lg leading-8 text-soot/72">
-              DeepGuard lets journalists, legal teams, security desks, and everyday users run authenticity checks on videos, news, and audio from one unified caseboard.
+              DeepGuard lets journalists, legal teams, security desks, and everyday users run authenticity checks on images, news, and audio from one unified caseboard.
             </p>
           </div>
           <div className="flex flex-col gap-4 sm:flex-row">
-            <Link href="/analyze/video" className="inline-flex items-center justify-center gap-2 rounded-full bg-soot px-6 py-4 text-sm font-semibold uppercase tracking-[0.24em] text-paper transition hover:bg-ember">
+            <Link href="/analyze/image" className="inline-flex items-center justify-center gap-2 rounded-full bg-soot px-6 py-4 text-sm font-semibold uppercase tracking-[0.24em] text-paper transition hover:bg-ember">
               Start a case
               <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link href="/demo" className="inline-flex items-center justify-center rounded-full border border-soot/15 bg-white/40 px-6 py-4 text-sm font-semibold uppercase tracking-[0.24em] text-soot transition hover:border-ember/40 hover:text-ember">
+              Open teacher demo
             </Link>
             <Link href="/history" className="inline-flex items-center justify-center rounded-full border border-soot/15 bg-white/40 px-6 py-4 text-sm font-semibold uppercase tracking-[0.24em] text-soot transition hover:border-ember/40 hover:text-ember">
               View investigation log
@@ -52,7 +55,7 @@ export function HomeHero() {
             </div>
             <div className="mt-5 grid gap-4 sm:grid-cols-3 lg:grid-cols-3">
               {[
-                ['30-60s', 'video analysis'],
+                ['10-20s', 'image analysis'],
                 ['10-20s', 'news scoring'],
                 ['10-15s', 'audio trace'],
               ].map(([value, label]) => (

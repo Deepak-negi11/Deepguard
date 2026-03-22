@@ -12,7 +12,7 @@ type AnalysisState = {
 };
 
 export const useAnalysisStore = create<AnalysisState>((set) => ({
-  activeMode: 'video',
+  activeMode: 'image',
   latestTask: null,
   setMode: (activeMode) => set({ activeMode }),
   setLatestTask: (latestTask) => set({ latestTask }),

@@ -1,13 +1,13 @@
 # DeepGuard
 
-DeepGuard is a full-stack blueprint for a multi-modal verification platform that flags suspicious video, news, and audio content. This repo ships with a polished Next.js interface, a FastAPI backend, async-style verification flows, Celery-ready task dispatch, persistent upload handling, and replaceable analyzer modules so you can start with a working prototype and later swap in real ML models.
+DeepGuard is a full-stack blueprint for a multi-modal verification platform that flags suspicious image, news, and audio content. This repo ships with a polished Next.js interface, a FastAPI backend, async-style verification flows, Celery-ready task dispatch, persistent upload handling, and replaceable analyzer modules so you can start with a working prototype and later swap in real ML models.
 
 ## What is inside
 
-- `frontend/` - Next.js App Router UI with an editorial forensic look and dedicated flows for video, news, and audio verification.
+- `frontend/` - Next.js App Router UI with an editorial forensic look and dedicated flows for image, news, and audio verification.
 - `backend/` - FastAPI API with JWT auth, request history, API usage logging, rate limiting, storage-backed processing, and structured result objects.
 - `docs/ai-implementation-brief.md` - a clean delegation brief you can hand to another AI assistant for module-specific work.
-- `ml_models/` - model, training, inference, and preprocessing scaffolds for video, news, and audio detectors.
+- `ml_models/` - model, training, inference, and preprocessing scaffolds for image, news, and audio detectors.
 - `docker-compose.yml` - local orchestration for frontend, backend, Postgres, and Redis.
 
 ## Current implementation status
@@ -53,11 +53,17 @@ This starts:
 
 - `POST /api/v1/auth/register`
 - `POST /api/v1/auth/login`
-- `POST /api/v1/verify/video`
+- `POST /api/v1/verify/image`
 - `POST /api/v1/verify/news`
 - `POST /api/v1/verify/audio`
 - `GET /api/v1/results/{task_id}`
 - `GET /api/v1/history`
+- `GET /api/v1/system/status`
+
+## Demo-friendly behavior
+
+- News verification can now ingest a public article URL directly. If article text is not provided, the backend attempts to fetch and extract readable page text before analysis.
+- `GET /api/v1/system/status` exposes the currently supported modes, whether prototype analyzers are enabled, and the dataset/sample-source links used by the project. This is useful in teacher demos because it shows exactly what is implemented versus what is still scaffold-level.
 
 ## Suggested next build steps
 

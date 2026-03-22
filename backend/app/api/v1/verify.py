@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Request, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
@@ -11,16 +11,17 @@ from app.dependencies import get_current_user
 from app.models import User, VerificationRequest
 from app.schemas import NewsVerifyRequest, StoredJob, TaskQueuedResponse
 from app.services.job_store import job_store
-from app.services.storage import store_upload
+from app.services.news_ingestion import resolve_news_input
+from app.services.storage import store_upload_stream
 from app.services.verification import VerificationTaskInput, run_request_analysis
 
 router = APIRouter()
 settings = get_settings()
 
 ALLOWED_UPLOADS = {
-    "video": {
-        "extensions": {".mp4", ".mov", ".avi", ".mkv", ".webm"},
-        "content_types": {"video/mp4", "video/quicktime", "video/x-msvideo", "video/x-matroska", "video/webm"},
+    "image": {
+        "extensions": {".jpg", ".jpeg", ".png", ".webp"},
+        "content_types": {"image/jpeg", "image/png", "image/webp"},
     },
     "audio": {
         "extensions": {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg"},
@@ -30,13 +31,13 @@ ALLOWED_UPLOADS = {
 
 
 def _content_signature_matches(*, mode: str, extension: str, content: bytes) -> bool:
-    if mode == "video":
-        if extension in {".mp4", ".mov", ".m4v"}:
-            return len(content) >= 12 and content[4:8] == b"ftyp"
-        if extension == ".avi":
-            return len(content) >= 12 and content[:4] == b"RIFF" and content[8:12] == b"AVI "
-        if extension in {".mkv", ".webm"}:
-            return content.startswith(b"\x1A\x45\xDF\xA3")
+    if mode == "image":
+        if extension in {".jpg", ".jpeg"}:
+            return content.startswith(b"\xff\xd8")
+        if extension == ".png":
+            return content.startswith(b"\x89PNG\r\n\x1a\n")
+        if extension == ".webp":
+            return content.startswith(b"RIFF") and content[8:12] == b"WEBP"
         return True
 
     if extension == ".wav":
@@ -63,6 +64,12 @@ def _safe_file_name(file_name: str | None) -> str:
 def _validate_upload(*, mode: str, file_name: str, content_type: str | None, content: bytes) -> tuple[str, str | None]:
     if not content:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Uploaded file is empty")
+
+    if mode not in ALLOWED_UPLOADS:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=f"Unsupported {mode} upload mode",
+        )
 
     max_upload_bytes = settings.max_upload_mb * 1024 * 1024
     if len(content) > max_upload_bytes:
@@ -98,10 +105,10 @@ def _validate_upload(*, mode: str, file_name: str, content_type: str | None, con
 
 def _dispatch_verification(*, background_tasks: BackgroundTasks, task_input: VerificationTaskInput) -> None:
     if settings.enable_celery_workers:
-        if task_input.request_type == "video":
-            from app.tasks.video_tasks import analyze_video_task
+        if task_input.request_type == "image":
+            from app.tasks.image_tasks import analyze_image_task
 
-            analyze_video_task.apply_async(
+            analyze_image_task.apply_async(
                 kwargs={
                     "request_id": task_input.request_id,
                     "file_name": task_input.file_name,
@@ -141,43 +148,92 @@ def _dispatch_verification(*, background_tasks: BackgroundTasks, task_input: Ver
     background_tasks.add_task(run_request_analysis, task_input)
 
 
-@router.post("/video", response_model=TaskQueuedResponse, status_code=status.HTTP_202_ACCEPTED)
-async def verify_video(background_tasks: BackgroundTasks, file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> TaskQueuedResponse:
-    content = await file.read()
-    safe_name, content_type = _validate_upload(mode="video", file_name=file.filename, content_type=file.content_type, content=content)
+MAX_IMAGE_SIZE_MB = 10
 
-    request = VerificationRequest(user_id=user.id, request_type="video", status="pending", file_name=safe_name)
-    db.add(request)
+@router.post("/image", response_model=TaskQueuedResponse, status_code=status.HTTP_202_ACCEPTED)
+def verify_image(request: Request, background_tasks: BackgroundTasks, file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> TaskQueuedResponse:
+    if file.size and file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"Image exceeds the {MAX_IMAGE_SIZE_MB} MB limit",
+        )
+
+    # Peek for validation without loading full payload.
+    head = file.file.read(4096)
+    if not head:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Uploaded file is empty")
+    file.file.seek(0)
+    safe_name, content_type = _validate_upload(mode="image", file_name=file.filename, content_type=file.content_type, content=head)
+
+    db_request = VerificationRequest(user_id=user.id, request_type="image", status="pending", file_name=safe_name)
+    db.add(db_request)
     db.commit()
-    db.refresh(request)
-    task_id = request.id
-    file_path = store_upload(request_id=request.id, request_type="video", file_name=safe_name, content=content)
-    job_store.create(StoredJob(task_id=task_id, request_id=request.id, status="queued", progress=5, current_step="Video queued"))
+    db.refresh(db_request)
+    task_id = db_request.id
+
+    max_upload_bytes = MAX_IMAGE_SIZE_MB * 1024 * 1024
+    try:
+        file_path, _ = store_upload_stream(
+            request_id=db_request.id,
+            request_type="image",
+            file_name=safe_name,
+            source=file.file,
+            max_bytes=max_upload_bytes,
+        )
+    except ValueError as exc:
+        if str(exc) == "upload_too_large":
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"Upload exceeds the {MAX_IMAGE_SIZE_MB} MB limit",
+            ) from exc
+        raise
+
+    job_store.create(StoredJob(task_id=task_id, request_id=db_request.id, status="queued", progress=5, current_step="Image queued"))
     _dispatch_verification(
         background_tasks=background_tasks,
         task_input=VerificationTaskInput(
             task_id=task_id,
-            request_id=request.id,
-            request_type="video",
+            request_id=db_request.id,
+            request_type="image",
             file_name=safe_name,
             content_type=content_type,
             file_path=file_path,
         ),
     )
-    return TaskQueuedResponse(task_id=task_id, request_id=request.id, status="queued", message="Video queued for analysis")
+    return TaskQueuedResponse(task_id=task_id, request_id=db_request.id, status="queued", message="Image queued for analysis")
 
 
 @router.post("/audio", response_model=TaskQueuedResponse, status_code=status.HTTP_202_ACCEPTED)
-async def verify_audio(background_tasks: BackgroundTasks, file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> TaskQueuedResponse:
-    content = await file.read()
-    safe_name, content_type = _validate_upload(mode="audio", file_name=file.filename, content_type=file.content_type, content=content)
+def verify_audio(background_tasks: BackgroundTasks, file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> TaskQueuedResponse:
+    head = file.file.read(4096)
+    if not head:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Uploaded file is empty")
+    file.file.seek(0)
+    safe_name, content_type = _validate_upload(mode="audio", file_name=file.filename, content_type=file.content_type, content=head)
 
     request = VerificationRequest(user_id=user.id, request_type="audio", status="pending", file_name=safe_name)
     db.add(request)
     db.commit()
     db.refresh(request)
     task_id = request.id
-    file_path = store_upload(request_id=request.id, request_type="audio", file_name=safe_name, content=content)
+
+    max_upload_bytes = settings.max_upload_mb * 1024 * 1024
+    try:
+        file_path, _ = store_upload_stream(
+            request_id=request.id,
+            request_type="audio",
+            file_name=safe_name,
+            source=file.file,
+            max_bytes=max_upload_bytes,
+        )
+    except ValueError as exc:
+        if str(exc) == "upload_too_large":
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"Upload exceeds the {settings.max_upload_mb} MB limit",
+            ) from exc
+        raise
+
     job_store.create(StoredJob(task_id=task_id, request_id=request.id, status="queued", progress=5, current_step="Audio queued"))
     _dispatch_verification(
         background_tasks=background_tasks,
@@ -198,8 +254,21 @@ def verify_news(payload: NewsVerifyRequest, background_tasks: BackgroundTasks, d
     if not payload.text and not payload.url:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Provide article text or a URL")
 
-    excerpt = (payload.text or str(payload.url) or "")[:240]
-    request = VerificationRequest(user_id=user.id, request_type="news", status="pending", url=str(payload.url) if payload.url else None, payload_excerpt=excerpt)
+    resolved = resolve_news_input(text=payload.text, url=str(payload.url) if payload.url else None)
+    if not resolved.text:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Could not extract article text from the provided URL. Paste article text directly or use a reachable public URL.",
+        )
+
+    excerpt = resolved.text[:240]
+    request = VerificationRequest(
+        user_id=user.id,
+        request_type="news",
+        status="pending",
+        url=resolved.url,
+        payload_excerpt=excerpt,
+    )
     db.add(request)
     db.commit()
     db.refresh(request)
@@ -211,8 +280,8 @@ def verify_news(payload: NewsVerifyRequest, background_tasks: BackgroundTasks, d
             task_id=task_id,
             request_id=request.id,
             request_type="news",
-            text=payload.text,
-            url=str(payload.url) if payload.url else None,
+            text=resolved.text,
+            url=resolved.url,
         ),
     )
     return TaskQueuedResponse(task_id=task_id, request_id=request.id, status="queued", message="News item queued for analysis")

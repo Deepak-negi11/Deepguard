@@ -2,27 +2,28 @@
 
 import { useEffect, useState } from 'react';
 
-import { fetchHistory, setToken as setApiToken } from '@/lib/api';
+import { fetchHistory, logout } from '@/lib/api';
 import { useAuthStore } from '@/store/use-auth-store';
 import type { HistoryItem } from '@/types/analysis';
 import { AuthCard } from './auth-card';
 
 export function HistoryList() {
-  const { token, email, clearSession } = useAuthStore();
+  const { userId, email, clearSession, hasHydrated } = useAuthStore();
   const [rows, setRows] = useState<HistoryItem[]>([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!token) {
+    if (!hasHydrated) {
+      return;
+    }
+    if (!userId) {
       setRows([]);
       setError('');
-      setApiToken(null);
       return;
     }
 
     async function run() {
       try {
-        setApiToken(token);
         const history = await fetchHistory();
         setRows(history.results);
         setError('');
@@ -32,9 +33,22 @@ export function HistoryList() {
     }
 
     void run();
-  }, [token]);
+  }, [hasHydrated, userId]);
 
-  if (!token) {
+  async function handleSignOut() {
+    try {
+      await logout();
+    } catch {
+      // ignore logout errors; clear client auth state regardless
+    }
+    clearSession();
+  }
+
+  if (!hasHydrated) {
+    return <p className="rounded-[1rem] border border-dashed border-soot/15 bg-paper/65 px-4 py-5 text-sm text-soot/65">Restoring your session...</p>;
+  }
+
+  if (!userId) {
     return (
       <AuthCard
         title="Sign in to view the case log"
@@ -57,10 +71,7 @@ export function HistoryList() {
         <span>Signed in as {email}</span>
         <button
           type="button"
-          onClick={() => {
-            clearSession();
-            setApiToken(null);
-          }}
+          onClick={() => void handleSignOut()}
           className="rounded-full border border-soot/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-soot transition hover:border-ember/35 hover:text-ember"
         >
           Sign out

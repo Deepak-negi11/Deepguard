@@ -16,10 +16,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: backend/pyproject.toml
       - name: Install backend
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
+      - name: Lint backend
+        run: |
+          python -m ruff check .
+          python -m ruff format --check .
       - name: Run backend tests
         run: pytest
 
@@ -37,5 +43,7 @@ jobs:
           cache-dependency-path: frontend/package.json
       - name: Install frontend
         run: npm install
+      - name: Lint frontend
+        run: npm run lint
       - name: Typecheck
         run: npm run typecheck

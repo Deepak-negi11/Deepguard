@@ -7,7 +7,7 @@ Use this document when delegating DeepGuard work to another AI assistant. It is 
 - Project name: `DeepGuard`
 - Product type: multi-modal authenticity verification platform
 - Modalities:
-  - video deepfake detection
+  - image deepfake detection
   - fake news and credibility analysis
   - synthetic audio or voice-clone detection
 - Primary outcome: a user uploads or submits suspicious media, then receives a verdict, confidence score, signal breakdown, evidence notes, and recommended next actions
@@ -112,7 +112,7 @@ deepguard/
 │   ├── src/store/
 │   └── src/types/
 ├── ml_models/
-│   ├── deepfake_detector/
+│   ├── image_deepfake_detector/
 │   ├── fake_news_detector/
 │   └── audio_detector/
 ├── docs/
@@ -139,7 +139,7 @@ Both return:
 
 ### Verification endpoints
 
-- `POST /api/v1/verify/video`
+- `POST /api/v1/verify/image`
 - `POST /api/v1/verify/news`
 - `POST /api/v1/verify/audio`
 
@@ -331,11 +331,11 @@ The rest of the API should not need to know whether the result came from heurist
 
 ### Suggested production analyzer layout
 
-- `ml_models/deepfake_detector/`
-  - frame extraction
-  - face localization
-  - spatial CNN
-  - temporal sequence model
+- `ml_models/image_deepfake_detector/`
+  - EfficientNet-B4 image model
+  - DCT/FFT frequency module
+  - noise uniformity feature extractor
+  - grad-cam visualization wrapper
   - ensemble scorer
 
 - `ml_models/fake_news_detector/`
@@ -372,15 +372,15 @@ Use primary or official sources when possible.
 
 Recommended dataset starting points:
 
-- FaceForensics++: official repository for large-scale manipulated face video benchmarking
-- Celeb-DF: official repository for celebrity deepfake benchmarking
+- GenImage: large-scale dataset of real and AI-generated images
+- CIFAKE: dataset for CNN vs human-generated images
 - LIAR: original fake-news benchmark from UCSB
 - ASVspoof 2019: official synthetic speech and spoofing benchmark
 
 Use these sources as discovery points:
 
-- FaceForensics++: `https://github.com/ondyari/FaceForensics`
-- Celeb-DF: `https://github.com/yuezunli/celeb-deepfakeforensics`
+- GenImage: `https://github.com/GenImage-Dataset/GenImage`
+- CIFAKE: `https://kaggle.com/datasets/birdy654/cifake-real-and-ai-generated-synthetic-images`
 - LIAR: `https://www.cs.ucsb.edu/~william/data/liar_dataset.zip`
 - ASVspoof 2019: `https://datashare.ed.ac.uk/handle/10283/3336`
 
@@ -417,6 +417,6 @@ Use prompts like these when handing work to another AI:
 
 - "Using the existing DeepGuard repo structure, implement Alembic migrations for the current SQLAlchemy models without changing the API contract."
 - "Replace the prototype audio analyzer adapter with a real PyTorch inference pipeline while preserving the current `AnalysisPayload` response shape."
-- "Build the FastAPI Celery worker flow for `/verify/video` and `/results/{task_id}` while keeping the existing frontend polling contract stable."
+- "Build the FastAPI Celery worker flow for `/verify/image` and `/results/{task_id}` while keeping the existing frontend polling contract stable."
 - "Extend the Next.js results UI to visualize evidence details and breakdown trends without changing the backend field names."
-- "Add dataset preprocessing scripts under `ml_models/deepfake_detector/` for FaceForensics++ and document how to train and export inference weights."
+- "Add dataset preprocessing scripts under `ml_models/image_deepfake_detector/` for GenImage and document how to train and export inference weights."

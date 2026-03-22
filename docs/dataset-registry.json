@@ -1,0 +1,67 @@
+[
+  {
+    "key": "liar",
+    "display_name": "LIAR Dataset",
+    "category": "news",
+    "target_dir": "news/liar",
+    "source_url": "https://www.cs.ucsb.edu/~william/data/liar_dataset.zip",
+    "access": "direct",
+    "archive_name": "liar_dataset.zip",
+    "notes": [
+      "Official dataset from UCSB.",
+      "Contains labeled political statements for fake-news classification research."
+    ]
+  },
+  {
+    "key": "faceforensics",
+    "display_name": "FaceForensics++",
+    "category": "video",
+    "target_dir": "video/faceforensics",
+    "source_url": "https://github.com/ondyari/FaceForensics",
+    "access": "manual",
+    "archive_name": null,
+    "notes": [
+      "Access requires accepting terms and using the official download tooling from the project repository.",
+      "Recommended compression setting for experiments is c23 unless higher fidelity is required."
+    ]
+  },
+  {
+    "key": "celebdf",
+    "display_name": "Celeb-DF",
+    "category": "video",
+    "target_dir": "video/celebdf",
+    "source_url": "https://github.com/yuezunli/celeb-deepfakeforensics",
+    "access": "manual",
+    "archive_name": null,
+    "notes": [
+      "Access is gated through the official project instructions.",
+      "Use this as a generalization benchmark, not your only training source."
+    ]
+  },
+  {
+    "key": "fake_news",
+    "display_name": "Fake and Real News Dataset",
+    "category": "news",
+    "target_dir": "news/fake_news_corpus",
+    "source_url": "https://www.kaggle.com/datasets/clmentbisaillon/fake-and-real-news-dataset",
+    "access": "kaggle",
+    "archive_name": null,
+    "notes": [
+      "Requires the Kaggle CLI or a manual download through Kaggle.",
+      "Store the unmodified CSV files in the target directory and build your own train/validation splits."
+    ]
+  },
+  {
+    "key": "asvspoof",
+    "display_name": "ASVspoof 2019",
+    "category": "audio",
+    "target_dir": "audio/asvspoof2019",
+    "source_url": "https://datashare.ed.ac.uk/handle/10283/3336",
+    "access": "manual",
+    "archive_name": null,
+    "notes": [
+      "Access requires accepting the terms on the official DataShare page.",
+      "Download both Logical Access and Physical Access subsets if you want broad spoof coverage."
+    ]
+  }
+]

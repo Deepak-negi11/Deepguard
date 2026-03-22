@@ -1,5 +1,6 @@
 import { AlertTriangle, BadgeCheck, Clock3, Fingerprint } from 'lucide-react';
 
+import { AnalysisResultImage } from './analysis-result-image';
 import { asPercent } from '@/lib/utils';
 import type { AnalysisResult } from '@/types/analysis';
 
@@ -40,6 +41,10 @@ export function ResultPanel({ result }: { result: AnalysisResult }) {
         <p className="mt-3 text-base leading-8 text-soot/80">{result.summary}</p>
         <p className="mt-4 text-xs uppercase tracking-[0.16em] text-soot/48">{result.disclaimer}</p>
       </div>
+
+      {result.input_profile.mode === 'image' && (
+        <AnalysisResultImage result={result} />
+      )}
 
       <div className="grid gap-4 md:grid-cols-3">
         <article className="rounded-[1.3rem] border border-soot/10 bg-paper/75 p-4">

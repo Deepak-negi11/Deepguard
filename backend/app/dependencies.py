@@ -1,5 +1,4 @@
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException, Request, status
 from jose import JWTError
 from sqlalchemy.orm import Session
 
@@ -8,17 +7,31 @@ from app.models import User
 from app.security import decode_access_token
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+def _extract_token(request: Request) -> str | None:
+    authorization = request.headers.get("Authorization", "")
+    if authorization.startswith("Bearer "):
+        return authorization.removeprefix("Bearer ").strip() or None
+
+    # Cookie-based auth for browser clients.
+    from app.config import get_settings
+
+    settings = get_settings()
+    cookie_value = request.cookies.get(settings.auth_cookie_name)
+    return cookie_value or None
 
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
-    """Resolve the authenticated user from the bearer token."""
+def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
+    """Resolve the authenticated user from bearer token or auth cookie."""
 
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    token = _extract_token(request)
+    if not token:
+        raise credentials_exception
 
     try:
         payload = decode_access_token(token)

@@ -4,7 +4,7 @@ import process from 'node:process';
 
 import { chromium } from 'playwright';
 
-const frontendUrl = process.env.DEEPGUARD_FRONTEND_URL ?? 'http://127.0.0.1:3100';
+const frontendUrl = process.env.DEEPGUARD_FRONTEND_URL ?? 'http://127.0.0.1:3000';
 const browserExecutablePath = process.env.DEEPGUARD_BROWSER_EXECUTABLE;
 const browserCdpUrl = process.env.DEEPGUARD_BROWSER_CDP_URL;
 const testEmail = process.env.DEEPGUARD_TEST_EMAIL ?? `browser-smoke-${Date.now()}@example.com`;

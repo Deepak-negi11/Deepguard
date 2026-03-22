@@ -30,7 +30,7 @@ class VerificationTaskInput:
 
 def _processing_step(request_type: str) -> str:
     return {
-        "video": "Extracting frames and checking artifact patterns",
+        "image": "Extracting features and running patch analysis",
         "audio": "Generating spectral traces and cadence signals",
         "news": "Scoring rhetoric, source trust, and cross-reference cues",
     }.get(request_type, "Running forensic analysis")
@@ -87,6 +87,8 @@ def run_request_analysis(task_input: VerificationTaskInput) -> None:
             result=result_payload,
         )
     except Exception as exc:
+        import traceback
+        traceback.print_exc()
         if request := db.get(VerificationRequest, task_input.request_id):
             request.status = "failed"
             db.commit()
@@ -103,47 +105,45 @@ def run_request_analysis(task_input: VerificationTaskInput) -> None:
 
 
 def _persist_result(*, db, request_id: str, result_payload: AnalysisPayload) -> None:
-    existing_result = db.scalar(select(VerificationResult).where(VerificationResult.request_id == request_id))
-    if existing_result is not None:
-        db.delete(existing_result)
-        db.commit()
+    # Persist atomically: either all result rows exist or none do.
+    with db.begin():
+        existing_result = db.scalar(select(VerificationResult).where(VerificationResult.request_id == request_id))
+        if existing_result is not None:
+            db.delete(existing_result)
 
-    existing_snapshot = db.scalar(select(StoredAnalysisPayload).where(StoredAnalysisPayload.request_id == request_id))
-    if existing_snapshot is not None:
-        db.delete(existing_snapshot)
-        db.commit()
+        existing_snapshot = db.scalar(select(StoredAnalysisPayload).where(StoredAnalysisPayload.request_id == request_id))
+        if existing_snapshot is not None:
+            db.delete(existing_snapshot)
 
-    result_row = VerificationResult(
-        request_id=request_id,
-        authenticity_score=result_payload.authenticity_score,
-        verdict=result_payload.verdict,
-        confidence=result_payload.confidence,
-        evidence=[item.model_dump() for item in result_payload.evidence],
-        breakdown=result_payload.breakdown,
-        processing_time_seconds=result_payload.processing_time_seconds,
-        model_version=result_payload.model_version,
-    )
-    db.add(result_row)
-    db.commit()
-    db.refresh(result_row)
+        result_row = VerificationResult(
+            request_id=request_id,
+            authenticity_score=result_payload.authenticity_score,
+            verdict=result_payload.verdict,
+            confidence=result_payload.confidence,
+            evidence=[item.model_dump() for item in result_payload.evidence],
+            breakdown=result_payload.breakdown,
+            processing_time_seconds=result_payload.processing_time_seconds,
+            model_version=result_payload.model_version,
+        )
+        db.add(result_row)
+        db.flush()
 
-    for item in result_payload.evidence:
+        for item in result_payload.evidence:
+            db.add(
+                EvidenceItemRecord(
+                    result_id=result_row.id,
+                    category=item.category,
+                    severity=item.severity,
+                    description=item.description,
+                    details=item.details,
+                    timestamp_in_media=item.timestamp,
+                    visualization_hint=item.visualization_hint,
+                )
+            )
+
         db.add(
-            EvidenceItemRecord(
-                result_id=result_row.id,
-                category=item.category,
-                severity=item.severity,
-                description=item.description,
-                details=item.details,
-                timestamp_in_media=item.timestamp,
-                visualization_hint=item.visualization_hint,
+            StoredAnalysisPayload(
+                request_id=request_id,
+                payload=result_payload.model_dump(),
             )
         )
-
-    db.add(
-        StoredAnalysisPayload(
-            request_id=request_id,
-            payload=result_payload.model_dump(),
-        )
-    )
-    db.commit()

@@ -1,4 +1,4 @@
-export type AnalysisMode = 'video' | 'news' | 'audio';
+export type AnalysisMode = 'image' | 'news' | 'audio';
 
 export type EvidenceItem = {
   category: string;
@@ -31,6 +31,7 @@ export type AnalysisResult = {
   input_profile: AnalysisInputProfile;
   processing_time_seconds: number;
   model_version: string;
+  gradcam_overlay_url?: string | null;
 };
 
 export type TaskStatus = {

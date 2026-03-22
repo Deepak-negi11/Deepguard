@@ -1,16 +1,27 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { LoaderCircle, LockKeyhole, UserRoundPlus } from 'lucide-react';
 
-import { login, register, setToken as setApiToken } from '@/lib/api';
+import { getApiErrorMessage, login, register } from '@/lib/api';
 import { useAuthStore } from '@/store/use-auth-store';
 
 type AuthMode = 'login' | 'register';
 
-export function AuthCard({ title, copy }: { title: string; copy: string }) {
+export function AuthCard({
+  title,
+  copy,
+  defaultMode = 'login',
+}: {
+  title: string;
+  copy: string;
+  defaultMode?: AuthMode;
+}) {
   const { setSession } = useAuthStore();
-  const [mode, setMode] = useState<AuthMode>('login');
+  const router = useRouter();
+  const [mode, setMode] = useState<AuthMode>(defaultMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,15 +32,23 @@ export function AuthCard({ title, copy }: { title: string; copy: string }) {
     setLoading(true);
     setError('');
     try {
-      const session = activeMode === 'register' ? await register(email, password) : await login(email, password);
-      setApiToken(session.access_token);
+      const normalizedEmail = email.trim().toLowerCase();
+      const session = activeMode === 'register' ? await register(normalizedEmail, password) : await login(normalizedEmail, password);
       setSession({
-        token: session.access_token,
         email: session.email,
         userId: session.user_id,
       });
-    } catch {
-      setError(activeMode === 'register' ? 'Could not create the account. Try signing in if it already exists.' : 'Sign in failed. Check the credentials and try again.');
+      router.push('/demo');
+      router.refresh();
+    } catch (error) {
+      setError(
+        getApiErrorMessage(
+          error,
+          activeMode === 'register'
+            ? 'Could not create the account. Try signing in if it already exists.'
+            : 'Sign in failed. Check the credentials and try again.',
+        ),
+      );
     } finally {
       setLoading(false);
     }
@@ -91,6 +110,24 @@ export function AuthCard({ title, copy }: { title: string; copy: string }) {
           {loading && mode === 'register' ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
           Create account
         </button>
+      </div>
+
+      <div className="mt-5 text-sm text-soot/65">
+        {mode === 'register' ? (
+          <p>
+            Already have an account?{' '}
+            <Link href="/signin" className="font-semibold text-ember transition hover:text-soot">
+              Sign in
+            </Link>
+          </p>
+        ) : (
+          <p>
+            Need a new account?{' '}
+            <Link href="/" className="font-semibold text-ember transition hover:text-soot">
+              Create one
+            </Link>
+          </p>
+        )}
       </div>
     </div>
   );

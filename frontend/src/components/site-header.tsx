@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { ShieldCheck, Siren, Waypoints } from 'lucide-react';
 
 const navItems = [
-  { href: '/analyze/video', label: 'Video Lab' },
+  { href: '/demo', label: 'Teacher Demo' },
+  { href: '/analyze/image', label: 'Image Lab' },
   { href: '/analyze/news', label: 'News Desk' },
   { href: '/analyze/audio', label: 'Audio Trace' },
   { href: '/history', label: 'Case Log' },

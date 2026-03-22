@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { FileAudio2, FileScan, FileVideo2, LoaderCircle, ShieldQuestion } from 'lucide-react';
+import { FileAudio2, FileScan, ImagePlus, LoaderCircle, ShieldQuestion } from 'lucide-react';
 
-import { fetchHistory, pollResult, setToken as setApiToken, submitFile, submitNews } from '@/lib/api';
+import { fetchHistory, logout, pollResult, submitFile, submitNews } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useAnalysisStore } from '@/store/use-analysis-store';
 import { useAuthStore } from '@/store/use-auth-store';
@@ -13,10 +13,10 @@ import { AuthCard } from './auth-card';
 import { ResultPanel } from './result-panel';
 
 const modeMeta = {
-  video: {
-    icon: FileVideo2,
-    title: 'Video Deepfake Lab',
-    intro: 'Upload suspicious footage and inspect frame artifacts, temporal drift, and provenance signals.',
+  image: {
+    icon: ImagePlus,
+    title: 'Image Deepfake Lab',
+    intro: 'Upload suspicious images and inspect EXIF tags, noise patterns, and generated patches.',
   },
   news: {
     icon: FileScan,
@@ -28,11 +28,11 @@ const modeMeta = {
     title: 'Audio Clone Trace',
     intro: 'Run a synthetic voice trace against spectral, cadence, and consistency signals.',
   },
-} satisfies Record<AnalysisMode, { icon: typeof FileVideo2; title: string; intro: string }>;
+} satisfies Record<AnalysisMode, { icon: typeof ImagePlus; title: string; intro: string }>;
 
 export function AnalysisConsole({ mode }: { mode: AnalysisMode }) {
   const { latestTask, setLatestTask, setMode } = useAnalysisStore();
-  const { token, email, clearSession } = useAuthStore();
+  const { email, clearSession, hasHydrated } = useAuthStore();
   const [text, setText] = useState('');
   const [url, setUrl] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -56,17 +56,21 @@ export function AnalysisConsole({ mode }: { mode: AnalysisMode }) {
   }
 
   useEffect(() => {
-    setApiToken(token);
-    if (token) {
+    if (!hasHydrated) {
+      return;
+    }
+    if (email) {
       void refreshHistory();
       return;
     }
     setHistory([]);
-  }, [token]);
+  }, [email, hasHydrated]);
 
-  async function pollUntilDone(taskId: string) {
+  async function pollUntilDone(taskId: string, signal: AbortSignal) {
     let done = false;
+    let delayMs = 900;
     while (!done) {
+      if (signal.aborted) return;
       const current = await pollResult(taskId);
       setLatestTask(current);
       setStatusNote(current.current_step);
@@ -74,7 +78,8 @@ export function AnalysisConsole({ mode }: { mode: AnalysisMode }) {
         done = true;
         void refreshHistory();
       } else {
-        await new Promise((resolve) => window.setTimeout(resolve, 1400));
+        await new Promise((resolve) => window.setTimeout(resolve, delayMs));
+        delayMs = Math.min(6000, Math.round(delayMs * 1.25 + Math.random() * 180));
       }
     }
   }
@@ -83,7 +88,7 @@ export function AnalysisConsole({ mode }: { mode: AnalysisMode }) {
     setLoading(true);
     setStatusNote('Preparing secure intake');
     try {
-      if (!token) {
+      if (!email) {
         setStatusNote('Sign in before launching an analysis.');
         return;
       }
@@ -100,7 +105,8 @@ export function AnalysisConsole({ mode }: { mode: AnalysisMode }) {
         queued = await submitFile(mode, file);
       }
       setStatusNote(queued.message);
-      await pollUntilDone(queued.task_id);
+      const controller = new AbortController();
+      await pollUntilDone(queued.task_id, controller.signal);
     } catch (error) {
       setStatusNote('The backend could not be reached. Start the API and retry.');
     } finally {
@@ -108,9 +114,13 @@ export function AnalysisConsole({ mode }: { mode: AnalysisMode }) {
     }
   }
 
-  function handleSignOut() {
+  async function handleSignOut() {
+    try {
+      await logout();
+    } catch {
+      // ignore logout errors; we'll clear local state regardless
+    }
     clearSession();
-    setApiToken(null);
     setLatestTask(null);
     setStatusNote('');
     setHistory([]);
@@ -123,7 +133,17 @@ export function AnalysisConsole({ mode }: { mode: AnalysisMode }) {
     return Boolean(file);
   }, [file, mode, text, url]);
 
-  if (!token) {
+  if (!hasHydrated) {
+    return (
+      <section className="px-6 py-12 lg:px-10 lg:py-16">
+        <div className="mx-auto max-w-4xl rounded-docket border border-soot/12 bg-white/75 p-8 text-sm text-soot/65 shadow-docket">
+          Restoring your session...
+        </div>
+      </section>
+    );
+  }
+
+  if (!email) {
     return (
       <section className="px-6 py-12 lg:px-10 lg:py-16">
         <div className="mx-auto max-w-4xl">
@@ -158,7 +178,7 @@ export function AnalysisConsole({ mode }: { mode: AnalysisMode }) {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
-            {(['video', 'news', 'audio'] as AnalysisMode[]).map((item) => (
+            {(['image', 'news', 'audio'] as AnalysisMode[]).map((item) => (
               <Link
                 key={item}
                 href={`/analyze/${item}`}

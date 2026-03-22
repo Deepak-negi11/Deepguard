@@ -1,7 +1,6 @@
 from functools import lru_cache
 from typing import List
 
-from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,14 +9,15 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="DEEPGUARD_", extra="ignore")
 
+    environment: str = "development"  # development|test|production
     app_name: str = "DeepGuard API"
     api_v1_prefix: str = "/api/v1"
-    database_url: str = "sqlite:///./deepguard.db"
+    database_url: str = "sqlite:////tmp/deepguard/deepguard.db"
     secret_key: str = "change-me-in-production"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 120
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3100,http://127.0.0.1:3100"
-    upload_root: str = "./uploads"
+    upload_root: str = "/tmp/deepguard/uploads"
     max_upload_mb: int = 250
     auto_create_schema: bool = False
     enable_demo_analyzers: bool = True
@@ -28,6 +28,12 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     celery_broker_url: str = "redis://localhost:6379/0"
     celery_result_backend: str = "redis://localhost:6379/1"
+
+    # Auth cookies
+    auth_cookie_name: str = "deepguard_access"
+    csrf_cookie_name: str = "deepguard_csrf"
+    cookie_secure: bool = False
+    cookie_samesite: str = "lax"  # lax|strict|none
 
     @property
     def cors_origin_list(self) -> List[str]:

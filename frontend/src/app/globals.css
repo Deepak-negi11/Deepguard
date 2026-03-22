@@ -4,6 +4,8 @@
 
 :root {
   color-scheme: light;
+  --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", "Cascadia Code", Consolas, monospace;
 }
 
 * {
@@ -11,7 +13,13 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 body {
@@ -26,7 +34,14 @@ body {
 
 a {
   color: inherit;
-  text-decoration: none;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+}
+
+a:hover,
+a:focus-visible {
+  text-decoration-thickness: 2px;
 }
 
 ::selection {

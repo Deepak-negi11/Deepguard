@@ -23,6 +23,11 @@ class AuthResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class SessionUserResponse(BaseModel):
+    user_id: int
+    email: EmailStr
+
+
 class NewsVerifyRequest(BaseModel):
     text: str | None = Field(default=None, min_length=20)
     url: HttpUrl | None = None
@@ -38,7 +43,7 @@ class EvidenceItem(BaseModel):
 
 
 class AnalysisInputProfile(BaseModel):
-    mode: Literal["video", "news", "audio"]
+    mode: Literal["image", "news", "audio"]
     filename: str | None = None
     content_type: str | None = None
     size_bytes: int | None = None
@@ -59,6 +64,7 @@ class AnalysisPayload(BaseModel):
     input_profile: AnalysisInputProfile
     processing_time_seconds: float
     model_version: str
+    gradcam_overlay_url: str | None = None
 
 
 class TaskQueuedResponse(BaseModel):
@@ -88,6 +94,34 @@ class HistoryItem(BaseModel):
 class HistoryResponse(BaseModel):
     total: int
     results: list[HistoryItem]
+
+
+class DemoDatasetEntry(BaseModel):
+    key: str
+    display_name: str
+    category: str
+    source_url: str
+    access: str
+    notes: list[str] = Field(default_factory=list)
+
+
+class DemoSourceLink(BaseModel):
+    label: str
+    category: Literal["news", "image", "audio", "general"]
+    url: str
+    purpose: str
+
+
+class SystemStatusResponse(BaseModel):
+    app_name: str
+    environment: str
+    supported_modes: list[Literal["image", "news", "audio"]]
+    demo_analyzers_enabled: bool
+    celery_workers_enabled: bool
+    upload_storage: str
+    news_url_fetch_enabled: bool
+    datasets: list[DemoDatasetEntry] = Field(default_factory=list)
+    sample_sources: list[DemoSourceLink] = Field(default_factory=list)
 
 
 class TokenPayload(BaseModel):
