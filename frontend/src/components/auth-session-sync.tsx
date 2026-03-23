@@ -1,14 +1,19 @@
 'use client';
 
 import { useEffect } from 'react';
+import axios from 'axios';
 
 import { fetchCurrentUser } from '@/lib/api';
 import { useAuthStore } from '@/store/use-auth-store';
 
 export function AuthSessionSync() {
-  const { setSession, clearSession } = useAuthStore();
+  const { hasHydrated, setSession, clearSession } = useAuthStore();
 
   useEffect(() => {
+    if (!hasHydrated) {
+      return;
+    }
+
     let cancelled = false;
 
     async function sync() {
@@ -19,9 +24,11 @@ export function AuthSessionSync() {
           email: user.email,
           userId: user.user_id,
         });
-      } catch {
+      } catch (error) {
         if (cancelled) return;
-        clearSession();
+        if (axios.isAxiosError(error) && error.response && [401, 403].includes(error.response.status)) {
+          clearSession();
+        }
       }
     }
 
@@ -30,7 +37,7 @@ export function AuthSessionSync() {
     return () => {
       cancelled = true;
     };
-  }, [clearSession, setSession]);
+  }, [clearSession, hasHydrated, setSession]);
 
   return null;
 }

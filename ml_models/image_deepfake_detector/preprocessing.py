@@ -46,7 +46,8 @@ def compute_noise_uniformity(image_path: str) -> float:
         # Unnaturally low standard deviation of block variances implies uniform noise (e.g., GANs)
         std_var = np.std(variances)
         # Normalize to an anomaly score
-        score = max(0.0, min(1.0, 1.0 - (std_var / 500.0)))
+        # Calibration: 1200 is more realistic for modern high-res denoised phones
+        score = max(0.0, min(1.0, 1.0 - (std_var / 1200.0)))
         return float(score)
     except Exception:
         return 0.5

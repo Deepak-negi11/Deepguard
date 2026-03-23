@@ -112,6 +112,45 @@ class DemoSourceLink(BaseModel):
     purpose: str
 
 
+class ModelRegistryEntry(BaseModel):
+    key: str
+    mode: Literal["image", "news", "audio"]
+    display_name: str
+    provider: str
+    model_id: str
+    source: Literal["prototype", "local_weights", "huggingface"]
+    active_version: str
+    weights_path: str | None = None
+    dataset_version: str | None = None
+    trained_at: str | None = None
+    validation_accuracy: float | None = None
+    notes: list[str] = Field(default_factory=list)
+
+
+class ModelStatusEntry(BaseModel):
+    mode: Literal["image", "news", "audio"]
+    analyzer_family: str
+    source: Literal["prototype", "local_weights", "huggingface"]
+    model_id: str
+    local_weights_available: bool
+    local_weights_path: str | None = None
+    warmup_on_startup: bool = False
+    notes: list[str] = Field(default_factory=list)
+
+
+class BenchmarkCaseEntry(BaseModel):
+    key: str
+    mode: Literal["image", "news", "audio"]
+    title: str
+    input_kind: Literal["text", "file"]
+    expected_verdict: Literal["likely real", "likely fake", "uncertain"]
+    text: str | None = None
+    url: str | None = None
+    sample_path: str | None = None
+    required: bool = True
+    notes: list[str] = Field(default_factory=list)
+
+
 class SystemStatusResponse(BaseModel):
     app_name: str
     environment: str
@@ -122,6 +161,9 @@ class SystemStatusResponse(BaseModel):
     news_url_fetch_enabled: bool
     datasets: list[DemoDatasetEntry] = Field(default_factory=list)
     sample_sources: list[DemoSourceLink] = Field(default_factory=list)
+    model_registry: list[ModelRegistryEntry] = Field(default_factory=list)
+    model_status: list[ModelStatusEntry] = Field(default_factory=list)
+    benchmark_suite: list[BenchmarkCaseEntry] = Field(default_factory=list)
 
 
 class TokenPayload(BaseModel):

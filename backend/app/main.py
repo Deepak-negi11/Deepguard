@@ -51,6 +51,9 @@ def _attach_background_task(response, task: BackgroundTask) -> None:
 
 
 def enforce_rate_limit(request: Request) -> None:
+    if settings.environment.lower() == "development":
+        return
+
     identity, _ = _resolve_request_identity(request)
     allowed, retry_after = rate_limiter.check(identity, settings.rate_limit_requests_per_hour)
     if not allowed:

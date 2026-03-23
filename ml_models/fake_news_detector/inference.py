@@ -1,7 +1,6 @@
 """
-Fake News Detection using Pre-Trained HuggingFace BERT model.
-Pattern adapted from industry-standard NLP classification pipelines.
-Uses: mrm8488/bert-tiny-finetuned-fake-news-detection (HuggingFace Hub)
+Fake news detection using a RoBERTa text-classification model.
+Uses: hamzab/roberta-fake-news-classification (HuggingFace Hub)
 """
 from __future__ import annotations
 
@@ -10,11 +9,15 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# Weights directory for local cache
-WEIGHTS_DIR = Path(__file__).resolve().parent.parent / "weights" / "fake_news"
+MODEL_ID = "hamzab/roberta-fake-news-classification"
+WEIGHTS_DIR = Path(__file__).resolve().parent.parent / "weights" / "fake_news" / "hamzab-roberta-fake-news-classification"
 
 # Singleton instance
 _pipeline = None
+
+
+def get_news_model_source() -> str:
+    return "local_weights" if (WEIGHTS_DIR / "config.json").exists() else "huggingface"
 
 
 def _get_pipeline():
@@ -28,25 +31,28 @@ def _get_pipeline():
 
         # Try loading from local weights first
         if (WEIGHTS_DIR / "config.json").exists():
-            logger.info(f"Loading Fake News model from local weights: {WEIGHTS_DIR}")
+            logger.info("Loading fake news model from local weights: %s", WEIGHTS_DIR)
             _pipeline = hf_pipeline(
                 "text-classification",
                 model=str(WEIGHTS_DIR),
                 tokenizer=str(WEIGHTS_DIR),
             )
         else:
-            # Fallback: download directly from HuggingFace Hub
-            logger.info("Local weights not found. Downloading from HuggingFace Hub...")
+            logger.info("Local fake news weights not found. Loading %s from HuggingFace Hub...", MODEL_ID)
             _pipeline = hf_pipeline(
                 "text-classification",
-                model="mrm8488/bert-tiny-finetuned-fake-news-detection",
+                model=MODEL_ID,
             )
-        logger.info("Fake News model loaded successfully.")
+        logger.info("Fake news model loaded successfully.")
     except Exception as e:
-        logger.error(f"Failed to load Fake News model: {e}")
+        logger.error("Failed to load fake news model: %s", e)
         _pipeline = None
 
     return _pipeline
+
+
+def warm_news_model() -> bool:
+    return _get_pipeline() is not None
 
 
 def predict_news(text: str, url: str | None = None) -> dict:
@@ -67,15 +73,20 @@ def predict_news(text: str, url: str | None = None) -> dict:
             ],
         }
 
-    # Run inference (truncate to BERT's 512 token limit)
+    # Keep inputs bounded for transformer inference.
     result = pipe(text[:512], truncation=True)[0]
 
-    # BERT-tiny fake news output: LABEL_0 = Real, LABEL_1 = Fake
-    label = result["label"]
+    label = str(result["label"]).strip().upper()
     confidence = result["score"]
-
-    is_fake = label == "LABEL_1"
-    classification = "FAKE" if is_fake else "REAL"
+    if label in {"FAKE", "FALSE"}:
+        classification = "FAKE"
+        severity = "high"
+    elif label in {"REAL", "TRUE"}:
+        classification = "REAL"
+        severity = "low"
+    else:
+        classification = "UNKNOWN"
+        severity = "medium"
 
     return {
         "classification": classification,
@@ -84,7 +95,9 @@ def predict_news(text: str, url: str | None = None) -> dict:
             {
                 "type": "text_analysis",
                 "description": f"Model classified text as {classification} with {confidence:.2%} confidence",
-                "severity": "high" if is_fake else "low",
+                "severity": severity,
+                "model_id": MODEL_ID,
+                "raw_label": label,
             }
         ],
     }

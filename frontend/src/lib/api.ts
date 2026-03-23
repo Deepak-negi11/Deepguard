@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 import type { AnalysisMode, HistoryItem, TaskStatus } from '@/types/analysis';
+import type { SystemStatus } from '@/types/system';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1',
@@ -62,6 +63,11 @@ export async function pollResult(taskId: string) {
 export async function fetchHistory() {
   const response = await api.get('/history');
   return response.data as { total: number; results: HistoryItem[] };
+}
+
+export async function fetchSystemStatus() {
+  const response = await api.get('/system/status');
+  return response.data as SystemStatus;
 }
 
 export function getApiErrorMessage(error: unknown, fallback: string) {

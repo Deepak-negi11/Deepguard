@@ -13,6 +13,7 @@ from app.api.v1.verify import _validate_upload, verify_news
 from app.database import Base, SessionLocal, engine
 from app.models import ApiUsage, User
 from app.schemas import LoginRequest, NewsVerifyRequest, RegisterRequest
+from app.services.analyzers import _analyze_news_model
 from app.services.job_store import job_store
 from app.services.usage_logger import log_api_usage
 
@@ -128,6 +129,60 @@ def test_news_verification_fetches_public_url_text(monkeypatch) -> None:
     assert result.result.input_profile.mode == "news"
 
 
+def test_analyze_news_model_maps_real_label_to_real_verdict(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "ml_models.fake_news_detector.inference.predict_news",
+        lambda text, url=None: {
+            "classification": "REAL",
+            "confidence": 0.91,
+            "anomalies": [
+                {
+                    "type": "text_analysis",
+                    "severity": "low",
+                    "description": "Model classified text as REAL with 91.00% confidence",
+                    "model_id": "hamzab/roberta-fake-news-classification",
+                    "raw_label": "REAL",
+                }
+            ],
+        },
+    )
+
+    result = _analyze_news_model(
+        text="BBC reports confirm a factual and current event in a neutral tone.",
+        url="https://www.bbc.com/news/articles/example",
+    )
+
+    assert result.verdict == "likely real"
+    assert result.authenticity_score == pytest.approx(0.91, rel=1e-6)
+    assert result.input_profile.analyzer_family == "roberta-fake-news"
+    assert result.evidence[0].details["raw_label"] == "REAL"
+
+
+def test_analyze_news_model_keeps_unknown_predictions_uncertain(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "ml_models.fake_news_detector.inference.predict_news",
+        lambda text, url=None: {
+            "classification": "UNKNOWN",
+            "confidence": 0.0,
+            "anomalies": [
+                {
+                    "type": "text_analysis",
+                    "severity": "medium",
+                    "description": "Model classified text as UNKNOWN with 0.00% confidence",
+                    "model_id": "hamzab/roberta-fake-news-classification",
+                    "raw_label": "LABEL_X",
+                }
+            ],
+        },
+    )
+
+    result = _analyze_news_model(text="Short factual text.", url=None)
+
+    assert result.verdict == "uncertain"
+    assert result.authenticity_score == pytest.approx(0.5, rel=1e-6)
+    assert result.evidence[0].details["model_id"] == "hamzab/roberta-fake-news-classification"
+
+
 def test_unsupported_upload_mode_is_rejected() -> None:
     with pytest.raises(HTTPException) as exc_info:
         _validate_upload(
@@ -195,3 +250,6 @@ def test_system_status_exposes_demo_configuration() -> None:
     assert response.news_url_fetch_enabled is True
     assert response.datasets
     assert response.sample_sources
+    assert response.model_status
+    assert response.model_registry
+    assert response.benchmark_suite

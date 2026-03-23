@@ -49,7 +49,7 @@ class VerificationResult(Base):
     evidence: Mapped[list[dict]] = mapped_column(JSON, nullable=False, default=list)
     breakdown: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     processing_time_seconds: Mapped[float] = mapped_column(Float, nullable=False)
-    model_version: Mapped[str] = mapped_column(String(32), default="prototype-v1")
+    model_version: Mapped[str] = mapped_column(String(128), default="prototype-v1")
     completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     request: Mapped[VerificationRequest] = relationship(back_populates="result")

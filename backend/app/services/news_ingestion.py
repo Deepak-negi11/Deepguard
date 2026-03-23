@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-import json
 import re
 from dataclasses import dataclass
 from html.parser import HTMLParser
-from pathlib import Path
 from urllib.parse import urlparse
 
 import httpx
+
+from app.services.system_registry import load_dataset_registry
 
 
 class _ArticleTextExtractor(HTMLParser):
@@ -95,11 +95,3 @@ def resolve_news_input(*, text: str | None, url: str | None) -> ResolvedNewsInpu
         source_domain=source_domain,
         fetched_from_url=bool(fetched_text),
     )
-
-
-def load_dataset_registry() -> list[dict]:
-    registry_path = Path(__file__).resolve().parents[3] / "docs" / "dataset-registry.json"
-    try:
-        return json.loads(registry_path.read_text(encoding="utf-8"))
-    except Exception:
-        return []

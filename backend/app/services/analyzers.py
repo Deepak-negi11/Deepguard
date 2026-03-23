@@ -154,7 +154,12 @@ def _analyze_news_model(*, text: str, url: str | None = None) -> AnalysisPayload
     anomalies = prediction.get("anomalies", [])
 
     verdict = "likely real" if classification == "REAL" and confidence > 0.6 else "likely fake" if classification == "FAKE" and confidence > 0.6 else "uncertain"
-    authenticity_score = confidence if classification == "REAL" else (1.0 - confidence)
+    if classification == "REAL":
+        authenticity_score = confidence
+    elif classification == "FAKE":
+        authenticity_score = 1.0 - confidence
+    else:
+        authenticity_score = 0.5
     source_domain = urlparse(url).hostname if url else None
 
     evidence = [
@@ -162,7 +167,12 @@ def _analyze_news_model(*, text: str, url: str | None = None) -> AnalysisPayload
             category=a["type"],
             severity=a["severity"],
             description=a["description"],
-            details={"raw_confidence": confidence, "source_domain": source_domain},
+            details={
+                "raw_confidence": confidence,
+                "source_domain": source_domain,
+                "model_id": a.get("model_id"),
+                "raw_label": a.get("raw_label"),
+            },
             visualization_hint="credibility_heatmap",
         )
         for a in anomalies
@@ -174,8 +184,8 @@ def _analyze_news_model(*, text: str, url: str | None = None) -> AnalysisPayload
         authenticity_score=round(authenticity_score, 3),
         verdict=verdict,
         confidence=round(confidence, 3),
-        summary=f"DeepGuard AI analyzed the text and concluded it is {classification} with {confidence*100:.1f}% confidence.",
-        disclaimer="Analyzed using pre-trained DistilBERT Fake News weights.",
+        summary=f"DeepGuard classified the text as {classification} with model confidence {confidence*100:.1f}%.",
+        disclaimer="Model confidence is supportive evidence, not proof of authenticity.",
         breakdown={
             "text_analysis_confidence": round(confidence, 3),
             "language_consistency": round(confidence, 3),
@@ -187,10 +197,10 @@ def _analyze_news_model(*, text: str, url: str | None = None) -> AnalysisPayload
             mode="news",
             url_domain=source_domain,
             text_length=len(text),
-            analyzer_family="distilbert-fake-news",
+            analyzer_family="roberta-fake-news",
         ),
         processing_time_seconds=duration,
-        model_version="huggingface-distilbert-v1",
+        model_version="roberta-fakenews-v1",
     )
 
 
@@ -405,7 +415,7 @@ def _analyze_binary_artifact_model(payload: BinaryArtifactInput) -> AnalysisPayl
             verdict = "likely real" if classification == "REAL" and confidence > 0.6 else "likely fake" if classification == "FAKE" and confidence > 0.6 else "uncertain"
             authenticity_score = confidence if classification == "REAL" else (1.0 - confidence)
 
-            model_family = "Ateeqq/image-detector"
+            model_family = "organika/sdxl-detector"
             gradcam_url = None
 
         else:

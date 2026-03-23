@@ -42,9 +42,9 @@ def compute_frequency_anomaly(image_path: str) -> float:
             
         ratio = high_freq_energy / mid_freq_energy
         
-        # Normalize to a 0.0 - 1.0 anomaly score (mock scale for demonstration)
-        # Real images usually have ratio > 0.8, GANs often have lower ratios
-        anomaly_score = max(0.0, min(1.0, 1.0 - ratio))
+        # Normalize to a 0.0 - 1.0 anomaly score
+        # Calibration: ratio > 0.6 is common for clean mobile photos
+        anomaly_score = max(0.0, min(1.0, 1.0 - (ratio / 0.7)))
         return float(anomaly_score)
         
     except Exception:

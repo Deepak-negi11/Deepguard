@@ -5,20 +5,20 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        paper: '#f1ead9',
-        soot: '#111312',
-        ember: '#b23a20',
-        moss: '#566c54',
-        brass: '#b28947',
+        paper: '#edf4ff',
+        soot: '#040816',
+        ember: '#5d7cff',
+        moss: '#7ee6ff',
+        brass: '#9db8ff',
       },
       boxShadow: {
-        docket: '0 20px 60px rgba(10, 12, 11, 0.14)',
+        docket: '0 30px 80px rgba(6, 14, 42, 0.42)',
       },
       borderRadius: {
         docket: '1.75rem',
       },
       backgroundImage: {
-        'forensic-grid': 'linear-gradient(rgba(17,19,18,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(17,19,18,0.08) 1px, transparent 1px)',
+        'forensic-grid': 'linear-gradient(rgba(141,170,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(141,170,255,0.12) 1px, transparent 1px)',
       },
     },
   },

@@ -3,8 +3,9 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.config import get_settings
-from app.schemas import DemoDatasetEntry, DemoSourceLink, SystemStatusResponse
-from app.services.news_ingestion import load_dataset_registry
+from app.schemas import BenchmarkCaseEntry, DemoDatasetEntry, DemoSourceLink, ModelRegistryEntry, SystemStatusResponse
+from app.services.model_status import build_model_status
+from app.services.system_registry import load_benchmark_suite, load_dataset_registry, load_model_registry
 
 router = APIRouter()
 settings = get_settings()
@@ -58,6 +59,38 @@ def get_system_status() -> SystemStatusResponse:
         )
         for item in load_dataset_registry()
     ]
+    model_registry = [
+        ModelRegistryEntry(
+            key=item.get("key", ""),
+            mode=item.get("mode", "news"),
+            display_name=item.get("display_name", ""),
+            provider=item.get("provider", ""),
+            model_id=item.get("model_id", ""),
+            source=item.get("source", "huggingface"),
+            active_version=item.get("active_version", ""),
+            weights_path=item.get("weights_path"),
+            dataset_version=item.get("dataset_version"),
+            trained_at=item.get("trained_at"),
+            validation_accuracy=item.get("validation_accuracy"),
+            notes=item.get("notes", []),
+        )
+        for item in load_model_registry()
+    ]
+    benchmark_suite = [
+        BenchmarkCaseEntry(
+            key=item.get("key", ""),
+            mode=item.get("mode", "news"),
+            title=item.get("title", ""),
+            input_kind=item.get("input_kind", "text"),
+            expected_verdict=item.get("expected_verdict", "uncertain"),
+            text=item.get("text"),
+            url=item.get("url"),
+            sample_path=item.get("sample_path"),
+            required=item.get("required", True),
+            notes=item.get("notes", []),
+        )
+        for item in load_benchmark_suite()
+    ]
 
     return SystemStatusResponse(
         app_name=settings.app_name,
@@ -69,4 +102,7 @@ def get_system_status() -> SystemStatusResponse:
         news_url_fetch_enabled=True,
         datasets=datasets,
         sample_sources=SAMPLE_SOURCES,
+        model_registry=model_registry,
+        model_status=build_model_status(),
+        benchmark_suite=benchmark_suite,
     )

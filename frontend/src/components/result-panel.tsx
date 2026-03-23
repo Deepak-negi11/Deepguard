@@ -1,7 +1,7 @@
 import { AlertTriangle, BadgeCheck, Clock3, Fingerprint } from 'lucide-react';
 
 import { AnalysisResultImage } from './analysis-result-image';
-import { asPercent } from '@/lib/utils';
+import { asConfidencePercent, asPercent, confidenceBand } from '@/lib/utils';
 import type { AnalysisResult } from '@/types/analysis';
 
 const verdictTone: Record<string, string> = {
@@ -25,21 +25,22 @@ function formatBytes(value?: number | null) {
 
 export function ResultPanel({ result }: { result: AnalysisResult }) {
   return (
-    <div className="space-y-5 rounded-docket border border-soot/12 bg-white/80 p-6 shadow-docket">
+    <div className="deepglass space-y-5 rounded-docket p-6 text-paper">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-soot/50">Latest verdict</p>
-          <h3 className="mt-2 font-[family-name:var(--font-display)] text-4xl text-soot">{result.verdict}</h3>
+          <p className="font-mono text-xs uppercase tracking-[0.3em] text-paper/42">Latest verdict</p>
+          <h3 className="mt-2 font-[family-name:var(--font-display)] text-4xl text-paper">{result.verdict}</h3>
         </div>
         <span className={`inline-flex rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] ${verdictTone[result.verdict] ?? 'text-soot border-soot/20 bg-soot/5'}`}>
-          {asPercent(result.confidence)} confidence
+          {confidenceBand(result.confidence)}
         </span>
       </div>
 
-      <div className="rounded-[1.3rem] border border-ember/15 bg-ember/8 p-5 text-soot">
-        <p className="font-mono text-xs uppercase tracking-[0.3em] text-soot/50">Analyst summary</p>
-        <p className="mt-3 text-base leading-8 text-soot/80">{result.summary}</p>
-        <p className="mt-4 text-xs uppercase tracking-[0.16em] text-soot/48">{result.disclaimer}</p>
+      <div className="rounded-[1.3rem] border border-paper/10 bg-paper/6 p-5 text-paper">
+        <p className="font-mono text-xs uppercase tracking-[0.3em] text-paper/42">Analyst summary</p>
+        <p className="mt-3 text-base leading-8 text-paper/82">{result.summary}</p>
+        <p className="mt-4 text-sm leading-7 text-paper/66">Displayed confidence is model confidence only, so it should be treated as a signal rather than proof.</p>
+        <p className="mt-4 text-xs uppercase tracking-[0.16em] text-paper/42">{result.disclaimer}</p>
       </div>
 
       {result.input_profile.mode === 'image' && (
@@ -47,42 +48,47 @@ export function ResultPanel({ result }: { result: AnalysisResult }) {
       )}
 
       <div className="grid gap-4 md:grid-cols-3">
-        <article className="rounded-[1.3rem] border border-soot/10 bg-paper/75 p-4">
-          <Fingerprint className="h-5 w-5 text-ember" />
-          <p className="mt-3 text-sm text-soot/60">Authenticity score</p>
-          <p className="font-[family-name:var(--font-display)] text-4xl text-soot">{asPercent(result.authenticity_score)}</p>
+        <article className="rounded-[1.3rem] border border-paper/10 bg-paper/6 p-4">
+          <Fingerprint className="h-5 w-5 text-moss" />
+          <p className="mt-3 text-sm text-paper/56">Authenticity score</p>
+          <p className="font-[family-name:var(--font-display)] text-4xl text-paper">{asPercent(result.authenticity_score)}</p>
         </article>
-        <article className="rounded-[1.3rem] border border-soot/10 bg-paper/75 p-4">
-          <Clock3 className="h-5 w-5 text-ember" />
-          <p className="mt-3 text-sm text-soot/60">Processing time</p>
-          <p className="font-[family-name:var(--font-display)] text-4xl text-soot">{result.processing_time_seconds}s</p>
+        <article className="rounded-[1.3rem] border border-paper/10 bg-paper/6 p-4">
+          <Clock3 className="h-5 w-5 text-moss" />
+          <p className="mt-3 text-sm text-paper/56">Model confidence</p>
+          <p className="font-[family-name:var(--font-display)] text-4xl text-paper">{asConfidencePercent(result.confidence)}</p>
         </article>
-        <article className="rounded-[1.3rem] border border-soot/10 bg-paper/75 p-4">
-          <BadgeCheck className="h-5 w-5 text-ember" />
-          <p className="mt-3 text-sm text-soot/60">Model version</p>
-          <p className="font-[family-name:var(--font-display)] text-2xl text-soot">{result.model_version}</p>
+        <article className="rounded-[1.3rem] border border-paper/10 bg-paper/6 p-4">
+          <BadgeCheck className="h-5 w-5 text-moss" />
+          <p className="mt-3 text-sm text-paper/56">Processing time</p>
+          <p className="font-[family-name:var(--font-display)] text-4xl text-paper">{result.processing_time_seconds}s</p>
+        </article>
+        <article className="rounded-[1.3rem] border border-paper/10 bg-paper/6 p-4">
+          <BadgeCheck className="h-5 w-5 text-moss" />
+          <p className="mt-3 text-sm text-paper/56">Model version</p>
+          <p className="font-[family-name:var(--font-display)] text-2xl text-paper">{result.model_version}</p>
         </article>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-        <div className="rounded-[1.3rem] border border-soot/10 bg-paper/70 p-5">
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-soot/50">Signal breakdown</p>
+        <div className="rounded-[1.3rem] border border-paper/10 bg-paper/6 p-5">
+          <p className="font-mono text-xs uppercase tracking-[0.3em] text-paper/42">Signal breakdown</p>
           <div className="mt-4 space-y-3">
             {Object.entries(result.breakdown).map(([label, value]) => (
               <div key={label}>
-                <div className="mb-2 flex items-center justify-between text-sm text-soot/70">
+                <div className="mb-2 flex items-center justify-between text-sm text-paper/68">
                   <span className="capitalize">{label.replaceAll('_', ' ')}</span>
                   <span>{asPercent(value)}</span>
                 </div>
-                <div className="h-2 rounded-full bg-soot/8">
-                  <div className="h-2 rounded-full bg-ember" style={{ width: `${Math.round(value * 100)}%` }} />
+                <div className="h-2 rounded-full bg-paper/10">
+                  <div className="h-2 rounded-full bg-moss" style={{ width: `${Math.round(value * 100)}%` }} />
                 </div>
               </div>
             ))}
           </div>
         </div>
-        <div className="rounded-[1.3rem] border border-soot/10 bg-soot p-5 text-paper">
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-paper/55">Evidence ledger</p>
+        <div className="rounded-[1.3rem] border border-paper/10 bg-[linear-gradient(180deg,rgba(4,8,22,0.92),rgba(7,14,37,0.86))] p-5 text-paper">
+          <p className="font-mono text-xs uppercase tracking-[0.3em] text-paper/52">Evidence ledger</p>
           <div className="mt-4 space-y-4">
             {result.evidence.map((item) => (
               <article key={`${item.category}-${item.description}`} className="rounded-[1.15rem] border border-paper/10 bg-paper/5 p-4">
@@ -116,8 +122,8 @@ export function ResultPanel({ result }: { result: AnalysisResult }) {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
-        <div className="rounded-[1.3rem] border border-soot/10 bg-paper/70 p-5">
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-soot/50">Input profile</p>
+        <div className="rounded-[1.3rem] border border-paper/10 bg-paper/6 p-5">
+          <p className="font-mono text-xs uppercase tracking-[0.3em] text-paper/42">Input profile</p>
           <div className="mt-4 grid gap-3">
             {[
               ['Mode', result.input_profile.mode],
@@ -128,19 +134,19 @@ export function ResultPanel({ result }: { result: AnalysisResult }) {
               ['Text length', result.input_profile.text_length ? `${result.input_profile.text_length} chars` : 'n/a'],
               ['Payload size', formatBytes(result.input_profile.size_bytes)],
             ].map(([label, value]) => (
-              <div key={label} className="flex items-center justify-between gap-4 rounded-[1rem] border border-soot/10 bg-white/70 px-4 py-3 text-sm text-soot/70">
-                <span className="uppercase tracking-[0.16em] text-soot/45">{label}</span>
-                <span className="text-right font-medium text-soot">{value}</span>
+              <div key={label} className="flex items-center justify-between gap-4 rounded-[1rem] border border-paper/10 bg-paper/5 px-4 py-3 text-sm text-paper/68">
+                <span className="uppercase tracking-[0.16em] text-paper/42">{label}</span>
+                <span className="text-right font-medium text-paper">{value}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="rounded-[1.3rem] border border-soot/10 bg-paper/70 p-5">
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-soot/50">Recommended actions</p>
+        <div className="rounded-[1.3rem] border border-paper/10 bg-paper/6 p-5">
+          <p className="font-mono text-xs uppercase tracking-[0.3em] text-paper/42">Recommended actions</p>
           <div className="mt-4 space-y-3">
             {result.recommended_actions.map((action) => (
-              <div key={action} className="rounded-[1rem] border border-soot/10 bg-white/70 px-4 py-4 text-sm leading-7 text-soot/75">
+              <div key={action} className="rounded-[1rem] border border-paper/10 bg-paper/5 px-4 py-4 text-sm leading-7 text-paper/72">
                 {action}
               </div>
             ))}

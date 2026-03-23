@@ -7,6 +7,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(currentDir, '..'),
+  allowedDevOrigins: ['localhost', '127.0.0.1'],
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },

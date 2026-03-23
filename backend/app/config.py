@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     enable_api_usage_logging: bool = True
     rate_limit_requests_per_hour: int = 100
     delete_uploads_after_processing: bool = True
+    warm_news_model_on_startup: bool = True
     redis_url: str = "redis://localhost:6379/0"
     celery_broker_url: str = "redis://localhost:6379/0"
     celery_result_backend: str = "redis://localhost:6379/1"

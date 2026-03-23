@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 import { fetchHistory, logout } from '@/lib/api';
+import { asConfidencePercent, confidenceBand } from '@/lib/utils';
 import { useAuthStore } from '@/store/use-auth-store';
 import type { HistoryItem } from '@/types/analysis';
 import { AuthCard } from './auth-card';
@@ -25,7 +27,7 @@ export function HistoryList() {
     async function run() {
       try {
         const history = await fetchHistory();
-        setRows(history.results);
+        setRows(history.results.filter((row) => row.type !== 'audio'));
         setError('');
       } catch {
         setError('Start the backend to load the case history.');
@@ -45,7 +47,7 @@ export function HistoryList() {
   }
 
   if (!hasHydrated) {
-    return <p className="rounded-[1rem] border border-dashed border-soot/15 bg-paper/65 px-4 py-5 text-sm text-soot/65">Restoring your session...</p>;
+    return <p className="rounded-[1rem] border border-dashed border-paper/14 bg-paper/5 px-4 py-5 text-sm text-paper/62">Restoring your session...</p>;
   }
 
   if (!userId) {
@@ -58,28 +60,36 @@ export function HistoryList() {
   }
 
   if (error) {
-    return <p className="rounded-[1rem] border border-dashed border-soot/15 bg-paper/65 px-4 py-5 text-sm text-soot/65">{error}</p>;
+    return <p className="rounded-[1rem] border border-dashed border-paper/14 bg-paper/5 px-4 py-5 text-sm text-paper/62">{error}</p>;
   }
 
   if (!rows.length) {
-    return <p className="rounded-[1rem] border border-dashed border-soot/15 bg-paper/65 px-4 py-5 text-sm text-soot/65">No investigations yet. Run the first case from any analysis desk.</p>;
+    return <p className="rounded-[1rem] border border-dashed border-paper/14 bg-paper/5 px-4 py-5 text-sm text-paper/62">No investigations yet. Run the first case from any analysis desk.</p>;
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-soot/10 bg-paper/70 px-4 py-4 text-sm text-soot/70">
+      <div className="deepglass-soft flex flex-wrap items-center justify-between gap-3 rounded-[1rem] px-4 py-4 text-sm text-paper/72">
         <span>Signed in as {email}</span>
-        <button
-          type="button"
-          onClick={() => void handleSignOut()}
-          className="rounded-full border border-soot/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-soot transition hover:border-ember/35 hover:text-ember"
-        >
-          Sign out
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/system"
+            className="rounded-full border border-paper/12 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-paper transition hover:border-moss/35 hover:text-moss"
+          >
+            System desk
+          </Link>
+          <button
+            type="button"
+            onClick={() => void handleSignOut()}
+            className="rounded-full border border-paper/12 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-paper transition hover:border-moss/35 hover:text-moss"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
-      <div className="overflow-hidden rounded-docket border border-soot/10 bg-white/85 shadow-docket">
+      <div className="deepglass overflow-hidden rounded-docket">
         <table className="w-full border-collapse text-left text-sm">
-          <thead className="bg-soot text-paper">
+          <thead className="bg-paper/6 text-paper">
             <tr>
               <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-[0.25em]">Type</th>
               <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-[0.25em]">Status</th>
@@ -90,11 +100,20 @@ export function HistoryList() {
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.request_id} className="border-t border-soot/8 bg-paper/70 text-soot/75">
-                <td className="px-4 py-4 font-semibold uppercase tracking-[0.16em] text-soot">{row.type}</td>
+              <tr key={row.request_id} className="border-t border-paper/8 bg-transparent text-paper/74">
+                <td className="px-4 py-4 font-semibold uppercase tracking-[0.16em] text-paper">{row.type}</td>
                 <td className="px-4 py-4 capitalize">{row.status}</td>
                 <td className="px-4 py-4 capitalize">{row.verdict ?? '-'}</td>
-                <td className="px-4 py-4">{row.confidence ? `${Math.round(row.confidence * 100)}%` : '-'}</td>
+                <td className="px-4 py-4">
+                  {row.confidence != null ? (
+                    <div>
+                      <p>{asConfidencePercent(row.confidence)}</p>
+                      <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-paper/42">{confidenceBand(row.confidence)}</p>
+                    </div>
+                  ) : (
+                    '-'
+                  )}
+                </td>
                 <td className="px-4 py-4">{new Date(row.created_at).toLocaleString()}</td>
               </tr>
             ))}

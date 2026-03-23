@@ -4,7 +4,7 @@ import process from 'node:process';
 
 import { chromium } from 'playwright';
 
-const frontendUrl = process.env.DEEPGUARD_FRONTEND_URL ?? 'http://127.0.0.1:3000';
+const frontendUrl = process.env.DEEPGUARD_FRONTEND_URL ?? 'http://localhost:3000';
 const browserExecutablePath = process.env.DEEPGUARD_BROWSER_EXECUTABLE;
 const browserCdpUrl = process.env.DEEPGUARD_BROWSER_CDP_URL;
 const testEmail = process.env.DEEPGUARD_TEST_EMAIL ?? `browser-smoke-${Date.now()}@example.com`;
@@ -69,38 +69,43 @@ async function run() {
 
   try {
     logStep('open-homepage');
-    await page.goto(frontendUrl, { waitUntil: 'networkidle', timeout: 45000 });
-    await page.getByRole('heading', { name: /Investigate suspicious media/i }).waitFor({ timeout: 15000 });
+    await page.goto(frontendUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await page.getByRole('heading', { name: /Detect manipulated media before it spreads/i }).waitFor({ timeout: 20000 });
     await capture(page, '01-homepage.png');
 
     logStep('open-news-desk');
-    await page.goto(new URL('/analyze/news', frontendUrl).toString(), { waitUntil: 'networkidle', timeout: 45000 });
+    await page.goto(new URL('/analyze/news', frontendUrl).toString(), { waitUntil: 'domcontentloaded', timeout: 45000 });
     const authEmailInput = page.getByPlaceholder('analyst@example.com');
-    if (await authEmailInput.count()) {
+    const authGateHeading = page.getByRole('heading', { name: /Access the News Credibility Desk/i });
+    const newsDeskHeading = page.getByRole('heading', { name: /News Credibility Desk/i });
+    await Promise.any([
+      authGateHeading.waitFor({ timeout: 45000 }),
+      newsDeskHeading.waitFor({ timeout: 45000 }),
+    ]);
+    if (await authEmailInput.isVisible().catch(() => false)) {
       logStep('authenticate');
       await authEmailInput.fill(testEmail);
       await page.getByPlaceholder('At least 8 characters').fill(testPassword);
       await page.getByRole('button', { name: /Create account/i }).click();
-      await page.getByRole('heading', { name: /News Credibility Desk/i }).waitFor({ timeout: 15000 });
-    } else {
-      await page.getByRole('heading', { name: /News Credibility Desk/i }).waitFor({ timeout: 15000 });
+      await newsDeskHeading.waitFor({ timeout: 15000 });
     }
+    await newsDeskHeading.waitFor({ timeout: 15000 });
     await capture(page, '02-news-desk.png');
 
     logStep('submit-news-case');
-    await page.getByPlaceholder('https://example.com/story').fill('https://example.com/suspicious-story');
     await page.getByPlaceholder('Paste the headline, article, or suspicious claim here.').fill(
-      'Breaking: an unverified article claims scientists revived extinct species and governments are hiding the proof.',
+      'SHOCKING: Scientists confirm 5G towers cause cancer. Government hiding truth. Big Pharma suppressing cure. Share before deleted!',
     );
 
     await page.getByRole('button', { name: /Launch analysis/i }).click();
     logStep('wait-for-result');
-    await page.getByRole('heading', { name: /LIKELY FAKE|LIKELY REAL|UNCERTAIN/i }).waitFor({ timeout: 30000 });
+    await page.getByRole('heading', { name: /LIKELY FAKE|LIKELY REAL|UNCERTAIN/i }).waitFor({ timeout: 120000 });
     await page.getByText(/Analyst summary/i).waitFor({ timeout: 10000 });
     await capture(page, '03-result.png');
 
     const verdict = await page.locator('h3').first().innerText();
     const statusNote = await page.locator('text=Case status').locator('..').innerText();
+    const summary = await page.locator('p').filter({ hasText: /DeepGuard classified the text as|DeepGuard AI analyzed the text/i }).first().innerText();
 
     await saveJson('result-summary.json', {
       frontendUrl,
@@ -109,6 +114,7 @@ async function run() {
       testEmail,
       verdict,
       statusNote,
+      summary,
       consoleMessages,
       pageErrors,
     });

@@ -2,15 +2,18 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { FileAudio2, FileScan, ImagePlus, LoaderCircle, ShieldQuestion } from 'lucide-react';
+import { FileScan, ImagePlus, LoaderCircle, Radar, ShieldQuestion } from 'lucide-react';
 
-import { fetchHistory, logout, pollResult, submitFile, submitNews } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { fetchHistory, fetchSystemStatus, logout, pollResult, submitFile, submitNews } from '@/lib/api';
+import { asConfidencePercent, cn } from '@/lib/utils';
 import { useAnalysisStore } from '@/store/use-analysis-store';
 import { useAuthStore } from '@/store/use-auth-store';
 import type { AnalysisMode, HistoryItem } from '@/types/analysis';
+import type { SystemStatus } from '@/types/system';
 import { AuthCard } from './auth-card';
 import { ResultPanel } from './result-panel';
+
+type VisibleMode = Extract<AnalysisMode, 'image' | 'news'>;
 
 const modeMeta = {
   image: {
@@ -23,12 +26,10 @@ const modeMeta = {
     title: 'News Credibility Desk',
     intro: 'Paste a URL or body text to score rhetorical manipulation and source trust.',
   },
-  audio: {
-    icon: FileAudio2,
-    title: 'Audio Clone Trace',
-    intro: 'Run a synthetic voice trace against spectral, cadence, and consistency signals.',
-  },
-} satisfies Record<AnalysisMode, { icon: typeof ImagePlus; title: string; intro: string }>;
+} satisfies Record<VisibleMode, { icon: typeof ImagePlus; title: string; intro: string }>;
+
+const visibleModes: VisibleMode[] = ['image', 'news'];
+const visibleModeSet = new Set<AnalysisMode>(visibleModes);
 
 export function AnalysisConsole({ mode }: { mode: AnalysisMode }) {
   const { latestTask, setLatestTask, setMode } = useAnalysisStore();
@@ -39,17 +40,18 @@ export function AnalysisConsole({ mode }: { mode: AnalysisMode }) {
   const [statusNote, setStatusNote] = useState('');
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
 
   useEffect(() => {
     setMode(mode);
   }, [mode, setMode]);
 
-  const meta = modeMeta[mode];
+  const meta = modeMeta[mode as VisibleMode];
 
   async function refreshHistory() {
     try {
       const response = await fetchHistory();
-      setHistory(response.results.slice(0, 5));
+      setHistory(response.results.filter((item) => visibleModeSet.has(item.type)).slice(0, 5));
     } catch {
       setHistory([]);
     }
@@ -65,6 +67,19 @@ export function AnalysisConsole({ mode }: { mode: AnalysisMode }) {
     }
     setHistory([]);
   }, [email, hasHydrated]);
+
+  useEffect(() => {
+    async function run() {
+      try {
+        const response = await fetchSystemStatus();
+        setSystemStatus(response);
+      } catch {
+        setSystemStatus(null);
+      }
+    }
+
+    void run();
+  }, []);
 
   async function pollUntilDone(taskId: string, signal: AbortSignal) {
     let done = false;
@@ -133,10 +148,15 @@ export function AnalysisConsole({ mode }: { mode: AnalysisMode }) {
     return Boolean(file);
   }, [file, mode, text, url]);
 
+  const activeModeStatus = useMemo(
+    () => systemStatus?.model_status.find((item) => item.mode === mode) ?? null,
+    [mode, systemStatus],
+  );
+
   if (!hasHydrated) {
     return (
       <section className="px-6 py-12 lg:px-10 lg:py-16">
-        <div className="mx-auto max-w-4xl rounded-docket border border-soot/12 bg-white/75 p-8 text-sm text-soot/65 shadow-docket">
+        <div className="deepglass mx-auto max-w-4xl rounded-docket p-8 text-sm text-paper/66">
           Restoring your session...
         </div>
       </section>
@@ -159,18 +179,18 @@ export function AnalysisConsole({ mode }: { mode: AnalysisMode }) {
   return (
     <section className="px-6 py-12 lg:px-10 lg:py-16">
       <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.95fr_1.05fr]">
-        <div className="space-y-6 rounded-docket border border-soot/12 bg-white/75 p-6 shadow-docket backdrop-blur">
+        <div className="deepglass space-y-6 rounded-docket p-6 text-paper">
           <div className="flex items-start gap-4">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full border border-ember/20 bg-ember/10 text-ember">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full border border-paper/12 bg-paper/6 text-moss">
               <meta.icon className="h-6 w-6" />
             </span>
             <div>
-              <p className="font-mono text-xs uppercase tracking-[0.32em] text-soot/45">Active investigation</p>
-              <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl text-soot">{meta.title}</h1>
-              <p className="mt-3 max-w-xl text-base leading-8 text-soot/70">{meta.intro}</p>
-              <div className="mt-4 flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-soot/45">
+              <p className="font-mono text-xs uppercase tracking-[0.32em] text-paper/42">Active investigation</p>
+              <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl text-paper">{meta.title}</h1>
+              <p className="mt-3 max-w-xl text-base leading-8 text-paper/68">{meta.intro}</p>
+              <div className="mt-4 flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-paper/44">
                 <span>Signed in as {email}</span>
-                <button type="button" onClick={handleSignOut} className="rounded-full border border-soot/15 px-3 py-2 text-soot transition hover:border-ember/35 hover:text-ember">
+                <button type="button" onClick={handleSignOut} className="rounded-full border border-paper/12 px-3 py-2 text-paper transition hover:border-moss/35 hover:text-moss">
                   Sign out
                 </button>
               </div>
@@ -178,13 +198,13 @@ export function AnalysisConsole({ mode }: { mode: AnalysisMode }) {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
-            {(['image', 'news', 'audio'] as AnalysisMode[]).map((item) => (
+            {visibleModes.map((item) => (
               <Link
                 key={item}
                 href={`/analyze/${item}`}
                 className={cn(
                   'rounded-[1.1rem] border px-4 py-3 text-sm font-semibold uppercase tracking-[0.18em] transition',
-                  item === mode ? 'border-soot bg-soot text-paper' : 'border-soot/10 bg-paper/70 text-soot/70 hover:border-ember/30 hover:text-ember',
+                  item === mode ? 'border-paper/18 bg-paper text-soot' : 'border-paper/10 bg-paper/6 text-paper/72 hover:border-moss/30 hover:text-moss',
                 )}
               >
                 {item}
@@ -192,58 +212,92 @@ export function AnalysisConsole({ mode }: { mode: AnalysisMode }) {
             ))}
           </div>
 
+          {activeModeStatus ? (
+            <div className="rounded-[1.25rem] border border-paper/10 bg-paper/6 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="font-mono text-xs uppercase tracking-[0.28em] text-paper/42">Active model status</p>
+                  <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-paper">{activeModeStatus.model_id}</h2>
+                </div>
+                <span className="rounded-full border border-moss/18 bg-moss/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-moss">
+                  {activeModeStatus.source.replaceAll('_', ' ')}
+                </span>
+              </div>
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <div className="rounded-[1rem] border border-paper/10 bg-paper/6 px-4 py-3 text-sm text-paper/68">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-paper/42">Warm-up</p>
+                  <p className="mt-1">{activeModeStatus.warmup_on_startup ? 'Enabled on startup' : 'Not enabled for this mode'}</p>
+                </div>
+                <Link
+                  href="/system"
+                  className="inline-flex items-center gap-2 rounded-[1rem] border border-paper/10 bg-paper/6 px-4 py-3 text-sm font-semibold uppercase tracking-[0.16em] text-paper transition hover:border-moss/35 hover:text-moss"
+                >
+                  <Radar className="h-4 w-4" />
+                  Open system desk
+                </Link>
+              </div>
+              <div className="mt-4 space-y-2">
+                {activeModeStatus.notes.map((note) => (
+                  <p key={note} className="text-sm leading-7 text-paper/64">
+                    {note}
+                  </p>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           {mode === 'news' ? (
             <div className="space-y-4">
               <label className="block">
-                <span className="mb-2 block font-mono text-xs uppercase tracking-[0.28em] text-soot/50">Source URL</span>
+                <span className="mb-2 block font-mono text-xs uppercase tracking-[0.28em] text-paper/44">Source URL</span>
                 <input
                   value={url}
                   onChange={(event) => setUrl(event.target.value)}
                   placeholder="https://example.com/story"
-                  className="w-full rounded-[1rem] border border-soot/10 bg-paper/60 px-4 py-3 outline-none transition focus:border-ember/40"
+                  className="w-full rounded-[1rem] border border-paper/10 bg-paper/6 px-4 py-3 text-paper outline-none transition placeholder:text-paper/28 focus:border-moss/40"
                 />
               </label>
               <label className="block">
-                <span className="mb-2 block font-mono text-xs uppercase tracking-[0.28em] text-soot/50">Article text</span>
+                <span className="mb-2 block font-mono text-xs uppercase tracking-[0.28em] text-paper/44">Article text</span>
                 <textarea
                   value={text}
                   onChange={(event) => setText(event.target.value)}
                   placeholder="Paste the headline, article, or suspicious claim here."
                   rows={10}
-                  className="w-full rounded-[1rem] border border-soot/10 bg-paper/60 px-4 py-3 outline-none transition focus:border-ember/40"
+                  className="w-full rounded-[1rem] border border-paper/10 bg-paper/6 px-4 py-3 text-paper outline-none transition placeholder:text-paper/28 focus:border-moss/40"
                 />
               </label>
             </div>
           ) : (
-            <label className="flex min-h-56 cursor-pointer flex-col items-center justify-center rounded-[1.4rem] border border-dashed border-soot/20 bg-paper/55 p-6 text-center transition hover:border-ember/35 hover:bg-paper/85">
-              <ShieldQuestion className="h-10 w-10 text-ember" />
-              <p className="mt-4 font-[family-name:var(--font-display)] text-3xl text-soot">Drop the suspect file here</p>
-              <p className="mt-3 max-w-md text-sm leading-7 text-soot/60">Add a short clip, interview, voicemail, or evidence sample. This prototype reads the file and routes it through the backend analysis contract.</p>
+            <label className="flex min-h-56 cursor-pointer flex-col items-center justify-center rounded-[1.4rem] border border-dashed border-paper/18 bg-paper/5 p-6 text-center transition hover:border-moss/35 hover:bg-paper/8">
+              <ShieldQuestion className="h-10 w-10 text-moss" />
+              <p className="mt-4 font-[family-name:var(--font-display)] text-3xl text-paper">Drop the suspect file here</p>
+              <p className="mt-3 max-w-md text-sm leading-7 text-paper/60">Add an evidence sample and route it through the backend analysis contract.</p>
               <input
                 type="file"
-                className="mt-6 block w-full text-sm text-soot/60 file:mr-4 file:rounded-full file:border-0 file:bg-soot file:px-4 file:py-3 file:font-semibold file:text-paper"
+                className="mt-6 block w-full text-sm text-paper/60 file:mr-4 file:rounded-full file:border-0 file:bg-paper file:px-4 file:py-3 file:font-semibold file:text-soot"
                 onChange={(event) => setFile(event.target.files?.[0] ?? null)}
               />
               {file ? <p className="mt-4 font-mono text-xs uppercase tracking-[0.24em] text-moss">Loaded: {file.name}</p> : null}
             </label>
           )}
 
-          <div className="rounded-[1.25rem] border border-soot/10 bg-soot px-5 py-4 text-paper">
+          <div className="rounded-[1.25rem] border border-paper/10 bg-paper/6 px-5 py-4 text-paper">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="font-mono text-xs uppercase tracking-[0.3em] text-paper/55">Case status</p>
-                <p className="mt-2 text-sm text-paper/75">{statusNote || 'Awaiting new evidence.'}</p>
+                <p className="font-mono text-xs uppercase tracking-[0.3em] text-paper/45">Case status</p>
+                <p className="mt-2 text-sm text-paper/72">{statusNote || 'Awaiting new evidence.'}</p>
               </div>
               {loading ? <LoaderCircle className="h-5 w-5 animate-spin text-paper" /> : null}
             </div>
             {latestTask ? (
               <div className="mt-4">
-                <div className="mb-2 flex items-center justify-between text-xs uppercase tracking-[0.22em] text-paper/55">
+                <div className="mb-2 flex items-center justify-between text-xs uppercase tracking-[0.22em] text-paper/45">
                   <span>{latestTask.status}</span>
                   <span>{latestTask.progress}%</span>
                 </div>
                 <div className="h-2 rounded-full bg-paper/10">
-                  <div className="h-2 rounded-full bg-ember transition-all" style={{ width: `${latestTask.progress}%` }} />
+                  <div className="h-2 rounded-full bg-moss transition-all" style={{ width: `${latestTask.progress}%` }} />
                 </div>
               </div>
             ) : null}
@@ -253,7 +307,7 @@ export function AnalysisConsole({ mode }: { mode: AnalysisMode }) {
             type="button"
             disabled={!canSubmit || loading}
             onClick={handleSubmit}
-            className="inline-flex w-full items-center justify-center rounded-full bg-ember px-6 py-4 text-sm font-semibold uppercase tracking-[0.24em] text-paper transition hover:bg-soot disabled:cursor-not-allowed disabled:bg-soot/25"
+            className="inline-flex w-full items-center justify-center rounded-full bg-paper px-6 py-4 text-sm font-semibold uppercase tracking-[0.24em] text-soot transition hover:bg-moss disabled:cursor-not-allowed disabled:bg-paper/25"
           >
             Launch analysis
           </button>
@@ -263,41 +317,41 @@ export function AnalysisConsole({ mode }: { mode: AnalysisMode }) {
           {latestTask?.result ? (
             <ResultPanel result={latestTask.result} />
           ) : (
-            <div className="rounded-docket border border-soot/12 bg-white/70 p-8 shadow-docket">
-              <p className="font-mono text-xs uppercase tracking-[0.3em] text-soot/50">No result yet</p>
-              <h2 className="mt-4 font-[family-name:var(--font-display)] text-4xl text-soot">Run a case to populate the forensic board.</h2>
-              <p className="mt-4 max-w-2xl text-base leading-8 text-soot/70">
+            <div className="deepglass-soft rounded-docket p-8 text-paper">
+              <p className="font-mono text-xs uppercase tracking-[0.3em] text-paper/42">No result yet</p>
+              <h2 className="mt-4 font-[family-name:var(--font-display)] text-4xl text-paper">Run a case to populate the forensic board.</h2>
+              <p className="mt-4 max-w-2xl text-base leading-8 text-paper/66">
                 The UI is wired to the backend queue contract. Once a verification finishes, you will see the verdict, confidence, breakdown signals, and evidence notes here.
               </p>
             </div>
           )}
 
-          <div className="rounded-docket border border-soot/12 bg-white/75 p-6 shadow-docket">
+          <div className="deepglass-soft rounded-docket p-6 text-paper">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="font-mono text-xs uppercase tracking-[0.3em] text-soot/50">Recent case log</p>
-                <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-soot">Last five investigations</h2>
+                <p className="font-mono text-xs uppercase tracking-[0.3em] text-paper/42">Recent case log</p>
+                <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-paper">Last five investigations</h2>
               </div>
-              <Link href="/history" className="text-sm font-semibold uppercase tracking-[0.2em] text-ember">
+              <Link href="/history" className="text-sm font-semibold uppercase tracking-[0.2em] text-moss">
                 Open full log
               </Link>
             </div>
             <div className="mt-5 space-y-3">
               {history.length ? (
                 history.map((item) => (
-                  <article key={item.request_id} className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-soot/10 bg-paper/75 px-4 py-3 text-sm text-soot/70">
+                  <article key={item.request_id} className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-paper/10 bg-paper/6 px-4 py-3 text-sm text-paper/68">
                     <div>
-                      <p className="font-semibold uppercase tracking-[0.16em] text-soot">{item.type}</p>
-                      <p className="font-mono text-xs uppercase tracking-[0.18em] text-soot/45">{new Date(item.created_at).toLocaleString()}</p>
+                      <p className="font-semibold uppercase tracking-[0.16em] text-paper">{item.type}</p>
+                      <p className="font-mono text-xs uppercase tracking-[0.18em] text-paper/42">{new Date(item.created_at).toLocaleString()}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold capitalize text-soot">{item.verdict ?? item.status}</p>
-                      <p className="font-mono text-xs uppercase tracking-[0.18em] text-soot/45">{item.confidence ? `${Math.round(item.confidence * 100)}% confidence` : item.status}</p>
+                      <p className="font-semibold capitalize text-paper">{item.verdict ?? item.status}</p>
+                      <p className="font-mono text-xs uppercase tracking-[0.18em] text-paper/42">{item.confidence != null ? `${asConfidencePercent(item.confidence)} model confidence` : item.status}</p>
                     </div>
                   </article>
                 ))
               ) : (
-                <p className="rounded-[1rem] border border-dashed border-soot/15 bg-paper/65 px-4 py-6 text-sm leading-7 text-soot/60">Once you authenticate and run a case, the latest request history will appear here.</p>
+                <p className="rounded-[1rem] border border-dashed border-paper/14 bg-paper/4 px-4 py-6 text-sm leading-7 text-paper/58">Once you authenticate and run a case, the latest request history will appear here.</p>
               )}
             </div>
           </div>

@@ -38,7 +38,7 @@ export function AuthCard({
         email: session.email,
         userId: session.user_id,
       });
-      router.push('/demo');
+      router.push('/analyze/news');
       router.refresh();
     } catch (error) {
       setError(
@@ -55,48 +55,48 @@ export function AuthCard({
   }
 
   return (
-    <div className="rounded-docket border border-soot/12 bg-white/80 p-8 shadow-docket">
+    <div className="deepglass rounded-docket p-8 text-paper">
       <div className="flex items-start gap-4">
-        <span className="flex h-14 w-14 items-center justify-center rounded-full border border-ember/20 bg-ember/10 text-ember">
+        <span className="flex h-14 w-14 items-center justify-center rounded-full border border-paper/12 bg-paper/6 text-moss">
           {mode === 'register' ? <UserRoundPlus className="h-6 w-6" /> : <LockKeyhole className="h-6 w-6" />}
         </span>
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-soot/50">Secure access</p>
-          <h2 className="mt-2 font-[family-name:var(--font-display)] text-4xl text-soot">{title}</h2>
-          <p className="mt-3 max-w-2xl text-base leading-8 text-soot/70">{copy}</p>
+          <p className="font-mono text-xs uppercase tracking-[0.3em] text-paper/44">Secure access</p>
+          <h2 className="mt-2 font-[family-name:var(--font-display)] text-4xl text-paper">{title}</h2>
+          <p className="mt-3 max-w-2xl text-base leading-8 text-paper/66">{copy}</p>
         </div>
       </div>
 
       <div className="mt-8 grid gap-4 md:grid-cols-2">
         <label className="block">
-          <span className="mb-2 block font-mono text-xs uppercase tracking-[0.28em] text-soot/50">Email</span>
+          <span className="mb-2 block font-mono text-xs uppercase tracking-[0.28em] text-paper/44">Email</span>
           <input
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="analyst@example.com"
-            className="w-full rounded-[1rem] border border-soot/10 bg-paper/60 px-4 py-3 outline-none transition focus:border-ember/40"
+            className="w-full rounded-[1rem] border border-paper/12 bg-paper/6 px-4 py-3 text-paper outline-none transition placeholder:text-paper/28 focus:border-moss/40"
           />
         </label>
         <label className="block">
-          <span className="mb-2 block font-mono text-xs uppercase tracking-[0.28em] text-soot/50">Password</span>
+          <span className="mb-2 block font-mono text-xs uppercase tracking-[0.28em] text-paper/44">Password</span>
           <input
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             placeholder="At least 8 characters"
-            className="w-full rounded-[1rem] border border-soot/10 bg-paper/60 px-4 py-3 outline-none transition focus:border-ember/40"
+            className="w-full rounded-[1rem] border border-paper/12 bg-paper/6 px-4 py-3 text-paper outline-none transition placeholder:text-paper/28 focus:border-moss/40"
           />
         </label>
       </div>
 
-      {error ? <p className="mt-4 rounded-[1rem] border border-ember/20 bg-ember/8 px-4 py-3 text-sm text-ember">{error}</p> : null}
+      {error ? <p className="mt-4 rounded-[1rem] border border-ember/20 bg-ember/10 px-4 py-3 text-sm text-paper">{error}</p> : null}
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
         <button
           type="button"
           disabled={loading || !email || password.length < 8}
           onClick={() => void handleSubmit('login')}
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-soot px-6 py-4 text-sm font-semibold uppercase tracking-[0.24em] text-paper transition hover:bg-ember disabled:cursor-not-allowed disabled:bg-soot/25"
+          className="inline-flex items-center justify-center gap-2 rounded-full bg-paper px-6 py-4 text-sm font-semibold uppercase tracking-[0.24em] text-soot transition hover:bg-moss disabled:cursor-not-allowed disabled:bg-paper/25"
         >
           {loading && mode === 'login' ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
           Sign in
@@ -105,25 +105,25 @@ export function AuthCard({
           type="button"
           disabled={loading || !email || password.length < 8}
           onClick={() => void handleSubmit('register')}
-          className="inline-flex items-center justify-center gap-2 rounded-full border border-soot/15 bg-paper px-6 py-4 text-sm font-semibold uppercase tracking-[0.24em] text-soot transition hover:border-ember/35 hover:text-ember disabled:cursor-not-allowed disabled:text-soot/30"
+          className="inline-flex items-center justify-center gap-2 rounded-full border border-paper/12 bg-paper/6 px-6 py-4 text-sm font-semibold uppercase tracking-[0.24em] text-paper transition hover:border-moss/35 hover:text-moss disabled:cursor-not-allowed disabled:text-paper/30"
         >
           {loading && mode === 'register' ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
           Create account
         </button>
       </div>
 
-      <div className="mt-5 text-sm text-soot/65">
+      <div className="mt-5 text-sm text-paper/62">
         {mode === 'register' ? (
           <p>
             Already have an account?{' '}
-            <Link href="/signin" className="font-semibold text-ember transition hover:text-soot">
+            <Link href="/signin" className="font-semibold text-moss transition hover:text-paper">
               Sign in
             </Link>
           </p>
         ) : (
           <p>
             Need a new account?{' '}
-            <Link href="/" className="font-semibold text-ember transition hover:text-soot">
+            <Link href="/signup" className="font-semibold text-moss transition hover:text-paper">
               Create one
             </Link>
           </p>

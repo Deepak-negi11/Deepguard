@@ -29,12 +29,12 @@ def _get_ml_pipeline():
         
     try:
         from transformers import pipeline
-        logger.info(f"Loading image detection model: Ateeqq/ai-vs-human-image-detector")
+        logger.info(f"Loading image detection model: Organika/sdxl-detector")
         # Load from the local path where download_pretrained_models downloaded it, 
         # or fallback to HF hub
         _pipeline = pipeline(
             "image-classification", 
-            model="Ateeqq/ai-vs-human-image-detector", 
+            model="Organika/sdxl-detector", 
             device=-1
         )
     except Exception as e:
@@ -99,9 +99,9 @@ def predict_image(image_path: str) -> dict:
         label_raw = best["label"].lower().strip()
         score = best["score"]
         
-        # label ai means FAKE, label hum means REAL
-        is_ai = "ai" in label_raw
-        final_label = "FAKE" if is_ai else "REAL"
+        # label artificial means FAKE, label human means REAL
+        is_fake = "artificial" in label_raw
+        final_label = "FAKE" if is_fake else "REAL"
         final_confidence = score
     else:
         final_label = "UNKNOWN"
