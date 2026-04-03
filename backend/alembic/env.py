@@ -2,13 +2,11 @@ from __future__ import annotations
 
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from alembic import context
 from app.config import get_settings
 from app.database import Base
-from app.models import ApiUsage, EvidenceItemRecord, StoredAnalysisPayload, User, VerificationRequest, VerificationResult
-
 
 config = context.config
 settings = get_settings()

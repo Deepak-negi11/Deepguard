@@ -7,9 +7,9 @@ Create Date: 2026-03-23 16:30:00
 
 from __future__ import annotations
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 revision = "0002_expand_model_version_length"
 down_revision = "0001_initial_schema"

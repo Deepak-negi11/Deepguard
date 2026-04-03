@@ -4,7 +4,6 @@ import time
 from collections import defaultdict, deque
 from threading import Lock
 
-
 WINDOW_SECONDS = 60 * 60
 
 

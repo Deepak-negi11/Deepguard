@@ -10,7 +10,6 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Literal
 
-
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 

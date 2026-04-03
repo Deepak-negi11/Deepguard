@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-
 _BACKEND_ROOT = Path(__file__).resolve().parents[2]
 _PROJECT_ROOT = _BACKEND_ROOT if (_BACKEND_ROOT / "docs").exists() else _BACKEND_ROOT.parent
 _DOCS_ROOT = _PROJECT_ROOT / "docs"

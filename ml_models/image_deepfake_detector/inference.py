@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 # Real CV heuristics
 try:
-    from ml_models.image_deepfake_detector.preprocessing import compute_noise_uniformity
     from ml_models.image_deepfake_detector.frequency import compute_frequency_anomaly
+    from ml_models.image_deepfake_detector.preprocessing import compute_noise_uniformity
 except ImportError:
     def compute_noise_uniformity(path): return 0.5
     def compute_frequency_anomaly(path): return 0.5
@@ -36,7 +36,7 @@ def _get_ml_pipeline():
         
     try:
         from transformers import pipeline
-        logger.info(f"Loading image detection model: Organika/sdxl-detector")
+        logger.info("Loading image detection model: Organika/sdxl-detector")
         # Load from the local path where download_pretrained_models downloaded it, 
         # or fallback to HF hub
         _pipeline = pipeline(
@@ -72,8 +72,8 @@ def check_c2pa(image_path: str) -> dict | None:
 
 def check_exif_anomaly(image_path: str) -> dict:
     try:
-        from PIL import Image
         import piexif
+        from PIL import Image
         img = Image.open(image_path)
         exif_dict = piexif.load(img.info.get("exif", b"")) if "exif" in img.info else {}
         if not exif_dict or not exif_dict.get("0th"):
@@ -83,8 +83,6 @@ def check_exif_anomaly(image_path: str) -> dict:
         return {"signal_name": "EXIF Anomaly", "is_anomalous": True, "detail": "Error reading EXIF"}
 
 def predict_image(image_path: str) -> dict:
-    start_time = time.time()
-    
     # Layer 1 - C2PA Check
     # Immediately return FAKE 95% if watermark is found
     c2pa_res = check_c2pa(image_path)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from app.services.benchmark_runner import benchmark_results_as_dicts, run_benchmark_suite
@@ -16,7 +16,7 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     payload = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "total": len(results),
         "passed": sum(item.status == "passed" for item in results),
         "failed": sum(item.status == "failed" for item in results),

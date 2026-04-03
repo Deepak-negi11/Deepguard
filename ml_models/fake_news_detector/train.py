@@ -24,7 +24,6 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)-8s %(message)s",
@@ -163,7 +162,7 @@ def evaluate(
             correct += (predictions == labels).sum().item()
             total += labels.size(0)
 
-            for predicted, actual in zip(predictions.tolist(), labels.tolist()):
+            for predicted, actual in zip(predictions.tolist(), labels.tolist(), strict=False):
                 if predicted == 1 and actual == 1:
                     tp += 1
                 elif predicted == 1 and actual == 0:

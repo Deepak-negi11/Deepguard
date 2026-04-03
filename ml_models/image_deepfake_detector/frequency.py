@@ -1,5 +1,6 @@
-import numpy as np
 import cv2
+import numpy as np
+
 
 def compute_frequency_anomaly(image_path: str) -> float:
     """

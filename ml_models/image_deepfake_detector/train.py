@@ -1,6 +1,7 @@
-import os
 import argparse
 import logging
+import os
+
 try:
     import torch
     import torch.nn as nn

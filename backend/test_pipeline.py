@@ -1,8 +1,9 @@
-import httpx
-import time
-import sys
 import json
 import math
+import sys
+import time
+
+import httpx
 
 API_URL = "http://localhost:8000/api/v1"
 

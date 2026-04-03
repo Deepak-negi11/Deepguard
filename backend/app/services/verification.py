@@ -12,7 +12,6 @@ from app.services.analyzers import BinaryArtifactInput, analyze_binary_artifact,
 from app.services.job_store import job_store
 from app.services.storage import delete_upload, load_upload_bytes
 
-
 settings = get_settings()
 
 

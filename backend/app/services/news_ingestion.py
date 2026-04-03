@@ -7,8 +7,6 @@ from urllib.parse import urlparse
 
 import httpx
 
-from app.services.system_registry import load_dataset_registry
-
 
 class _ArticleTextExtractor(HTMLParser):
     """Collect visible text while skipping obvious non-content tags."""

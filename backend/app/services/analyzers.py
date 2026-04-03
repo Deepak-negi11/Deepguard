@@ -12,8 +12,8 @@ _APP_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(_APP_ROOT) not in sys.path:
     sys.path.insert(0, str(_APP_ROOT))
 
-from app.config import get_settings
-from app.schemas import AnalysisInputProfile, AnalysisPayload, EvidenceItem
+from app.config import get_settings  # noqa: E402
+from app.schemas import AnalysisInputProfile, AnalysisPayload, EvidenceItem  # noqa: E402
 
 settings = get_settings()
 
@@ -227,7 +227,6 @@ def _stable_signal(raw_value: str) -> float:
 def _analyze_binary_artifact_demo(payload: BinaryArtifactInput) -> AnalysisPayload:
     start = time.perf_counter()
     size_bytes = len(payload.raw_bytes)
-    extension = Path(payload.file_name).suffix.lower()
     entropy_signal = _clamp(_binary_entropy(payload.raw_bytes))
     size_signal = _clamp(min(size_bytes, 25 * 1024 * 1024) / float(25 * 1024 * 1024))
     marker_signal = _stable_signal(f"{payload.request_type}:{payload.file_name}:{size_bytes}")

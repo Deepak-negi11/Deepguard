@@ -1,4 +1,4 @@
-from app.database import SessionLocal, Base, engine
+from app.database import Base, SessionLocal, engine
 from app.models import User, VerificationRequest
 from app.services.verification import VerificationTaskInput, run_request_analysis
 

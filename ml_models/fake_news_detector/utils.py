@@ -4,7 +4,6 @@ from urllib.parse import urlparse
 
 import torch
 
-
 TRUSTED_DOMAINS = {"reuters.com", "apnews.com", "bbc.com", "nytimes.com"}
 
 

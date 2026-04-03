@@ -30,6 +30,7 @@ SAMPLE_SOURCES = [
         category="image",
         url="https://github.com/ondyari/FaceForensics",
         purpose="Official manipulated-face dataset. Use frames if you need still-image samples.",
+    ),
 ]
 
 

@@ -17,7 +17,8 @@ def strip_and_save(path: str) -> str:
     try:
         img = Image.open(path)
         # Load existing exif, if it fails or doesn't exist, we just save without it
-        exif_dict = piexif.load(img.info.get("exif", b"")) if "exif" in img.info else {}
+        if "exif" in img.info:
+            piexif.load(img.info.get("exif", b""))
         
         # In a real scenario, you might preserve specific tags needed for heuristic analysis,
         # but here we wipe it to an empty dict as requested in the plan.

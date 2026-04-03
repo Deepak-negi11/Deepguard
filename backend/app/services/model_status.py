@@ -5,7 +5,6 @@ from pathlib import Path
 from app.config import get_settings
 from app.schemas import ModelStatusEntry
 
-
 settings = get_settings()
 _BACKEND_ROOT = Path(__file__).resolve().parents[2]
 _PROJECT_ROOT = _BACKEND_ROOT if (_BACKEND_ROOT / "ml_models").exists() else _BACKEND_ROOT.parent

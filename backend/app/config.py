@@ -1,5 +1,4 @@
 from functools import lru_cache
-from typing import List
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -37,7 +36,7 @@ class Settings(BaseSettings):
     cookie_samesite: str = "lax"  # lax|strict|none
 
     @property
-    def cors_origin_list(self) -> List[str]:
+    def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
 

@@ -7,6 +7,7 @@ via inference.py. This class is kept for potential future fine-tuning workflows.
 import torch
 import torch.nn as nn
 
+
 class ImageDeepfakeDetector(nn.Module):
     """EfficientNet-B4 based detector — kept for fine-tuning, not used in inference."""
     def __init__(self, pretrained: bool = False):

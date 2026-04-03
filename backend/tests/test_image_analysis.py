@@ -1,4 +1,3 @@
-import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -64,6 +63,7 @@ def test_exif_stripping(tmp_path):
     """Test the strip_and_save function used in image_tasks.py"""
     import piexif
     from PIL import Image
+
     from app.tasks.image_tasks import strip_and_save
     
     # Create simple image with some EXIF data
@@ -71,7 +71,7 @@ def test_exif_stripping(tmp_path):
     img = Image.new("RGB", (100, 100), color="red")
     
     # Add dummy EXIF (e.g. 'Software': 'My Test App')
-    zeroth_ifd = {piexif.ImageIFD.Software: u"My Test App".encode("utf-8")}
+    zeroth_ifd = {piexif.ImageIFD.Software: b"My Test App"}
     exif_dict = {"0th": zeroth_ifd, "Exif": {}, "GPS": {}, "1st": {}, "Interop": {}}
     exif_bytes = piexif.dump(exif_dict)
     

@@ -4,9 +4,9 @@ import logging
 import time
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
-from fastapi.routing import APIRoute
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
+from fastapi.routing import APIRoute
 from starlette.background import BackgroundTask, BackgroundTasks
 
 from app.api.router import router
