@@ -120,7 +120,7 @@ def _dispatch_verification(*, background_tasks: BackgroundTasks, task_input: Ver
 MAX_IMAGE_SIZE_MB = 10
 
 @router.post("/image", response_model=TaskQueuedResponse, status_code=status.HTTP_202_ACCEPTED)
-def verify_image(request: Request, background_tasks: BackgroundTasks, file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> TaskQueuedResponse:
+def verify_image(request: Request, background_tasks: BackgroundTasks, file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> TaskQueuedResponse:  # noqa: B008
     if file.size and file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
@@ -174,7 +174,7 @@ def verify_image(request: Request, background_tasks: BackgroundTasks, file: Uplo
 
 
 @router.post("/news", response_model=TaskQueuedResponse, status_code=status.HTTP_202_ACCEPTED)
-def verify_news(payload: NewsVerifyRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> TaskQueuedResponse:
+def verify_news(payload: NewsVerifyRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> TaskQueuedResponse:  # noqa: B008
     if not payload.text and not payload.url:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Provide article text or a URL")
 

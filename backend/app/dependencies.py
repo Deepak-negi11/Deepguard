@@ -20,7 +20,7 @@ def _extract_token(request: Request) -> str | None:
     return cookie_value or None
 
 
-def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
+def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:  # noqa: B008
     """Resolve the authenticated user from bearer token or auth cookie."""
 
     credentials_exception = HTTPException(

@@ -41,7 +41,7 @@ def _normalize_email(value: str) -> str:
 
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-def register(payload: RegisterRequest, response: Response, db: Session = Depends(get_db)) -> AuthResponse:
+def register(payload: RegisterRequest, response: Response, db: Session = Depends(get_db)) -> AuthResponse:  # noqa: B008
     email = _normalize_email(payload.email)
     existing = db.scalar(select(User).where(User.email == email))
     if existing:
@@ -62,7 +62,7 @@ def register(payload: RegisterRequest, response: Response, db: Session = Depends
 
 
 @router.post("/login", response_model=AuthResponse)
-def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)) -> AuthResponse:
+def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)) -> AuthResponse:  # noqa: B008
     email = _normalize_email(payload.email)
     user = db.scalar(select(User).where(User.email == email))
     if user is None or not verify_password(payload.password, user.password_hash):
@@ -75,7 +75,7 @@ def login(payload: LoginRequest, response: Response, db: Session = Depends(get_d
 
 
 @router.get("/me", response_model=SessionUserResponse)
-def get_me(user: User = Depends(get_current_user)) -> SessionUserResponse:
+def get_me(user: User = Depends(get_current_user)) -> SessionUserResponse:  # noqa: B008
     return SessionUserResponse(user_id=user.id, email=user.email)
 
 

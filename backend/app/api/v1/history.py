@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.get("", response_model=HistoryResponse)
-def get_history(limit: int = 20, offset: int = 0, db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> HistoryResponse:
+def get_history(limit: int = 20, offset: int = 0, db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> HistoryResponse:  # noqa: B008
     query = (
         select(VerificationRequest)
         .where(VerificationRequest.user_id == user.id)

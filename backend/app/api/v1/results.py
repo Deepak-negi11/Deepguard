@@ -25,7 +25,7 @@ def _is_terminal(status_value: str) -> bool:
 
 
 @router.get("/{task_id}", response_model=TaskResultResponse)
-def get_result(task_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> TaskResultResponse:
+def get_result(task_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> TaskResultResponse:  # noqa: B008
     request = db.get(VerificationRequest, task_id)
     if request is None or request.user_id != user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
