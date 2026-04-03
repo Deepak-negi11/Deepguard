@@ -31,7 +31,6 @@ class VerificationTaskInput:
 def _processing_step(request_type: str) -> str:
     return {
         "image": "Extracting features and running patch analysis",
-        "audio": "Generating spectral traces and cadence signals",
         "news": "Scoring rhetoric, source trust, and cross-reference cues",
     }.get(request_type, "Running forensic analysis")
 

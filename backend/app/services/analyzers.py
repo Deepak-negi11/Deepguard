@@ -282,39 +282,6 @@ def _analyze_binary_artifact_demo(payload: BinaryArtifactInput) -> AnalysisPaylo
             "frequency_artifact_score": round(dct_double_compression, 3),
             "manipulation_risk": round(fake_score, 3),
         }
-    else:
-        spectral_score = _clamp(0.26 + entropy_signal * 0.24 + marker_signal * 0.18)
-        cadence_score = _clamp(0.66 - abs(0.5 - marker_signal) * 0.7)
-        artifact_score = _clamp(0.22 + (1.0 - size_signal) * 0.18 + entropy_signal * 0.22)
-        fake_score = _clamp(spectral_score * 0.34 + (1.0 - cadence_score) * 0.28 + artifact_score * 0.2 + marker_signal * 0.18)
-        analyzer_family = "prototype-audio-heuristics"
-        recommended_actions = [
-            "Compare the sample with a trusted voice baseline before treating it as authentic.",
-            "Retain the original recording to avoid introducing re-encoding artifacts.",
-        ]
-        evidence = [
-            EvidenceItem(
-                category="Spectral Artifact",
-                severity="high" if fake_score >= 0.68 else "medium",
-                description="Prototype spectral heuristics detected regularity patterns that can appear in synthetic audio.",
-                timestamp=round(marker_signal * 18, 1),
-                details={"spectral_signal": round(spectral_score, 3), "entropy_signal": round(entropy_signal, 3)},
-                visualization_hint="timeline-marker",
-            ),
-            EvidenceItem(
-                category="Cadence Consistency",
-                severity="low" if cadence_score >= 0.55 else "medium",
-                description="Cadence consistency was estimated using a lightweight byte-pattern proxy rather than a real prosody model.",
-                details={"cadence_score": round(cadence_score, 3), "file_extension": extension or "unknown"},
-                visualization_hint="prosody-trace",
-            ),
-        ]
-        breakdown = {
-            "spectral_artifact_signal": round(spectral_score, 3),
-            "cadence_consistency": round(cadence_score, 3),
-            "artifact_detector": round(artifact_score, 3),
-            "manipulation_risk": round(fake_score, 3),
-        }
 
     verdict, confidence = _score_to_verdict(fake_score)
     duration = round(time.perf_counter() - start, 3)
@@ -342,7 +309,7 @@ def _analyze_binary_artifact_demo(payload: BinaryArtifactInput) -> AnalysisPaylo
 def _analyze_binary_artifact_model(payload: BinaryArtifactInput) -> AnalysisPayload:
     start = time.perf_counter()
 
-    suffix = ".jpg" if payload.request_type == "image" else ".wav"
+    suffix = ".jpg"
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
         tmp.write(payload.raw_bytes)
         tmp_path = Path(tmp.name)
@@ -416,34 +383,8 @@ def _analyze_binary_artifact_model(payload: BinaryArtifactInput) -> AnalysisPayl
             authenticity_score = confidence if classification == "REAL" else (1.0 - confidence)
 
             model_family = "organika/sdxl-detector"
-            gradcam_url = None
-
-        else:
-            from ml_models.audio_detector.inference import predict_audio
-
-            prediction = predict_audio(tmp_path)
-            model_family = "rawnet2-asvspoof"
-
-            classification = prediction.get("classification", "UNKNOWN")
-            confidence = prediction.get("confidence", 0.0)
-            anomalies = prediction.get("anomalies", [])
-            gradcam_url = None
-
-            verdict = "likely real" if classification == "REAL" and confidence > 0.6 else "likely fake" if classification == "FAKE" and confidence > 0.6 else "uncertain"
-            authenticity_score = confidence if classification == "REAL" else (1.0 - confidence)
-
-            evidence = [
-                EvidenceItem(
-                    category=a["type"],
-                    severity=a["severity"],
-                    description=a["description"],
-                    timestamp=0.0,
-                    details={"model_confidence": confidence},
-                    visualization_hint="timeline-marker",
-                )
-                for a in anomalies
-            ]
-            breakdown = {"model_confidence": round(confidence, 3)}
+            gradcam_filename = prediction.get("gradcam_filename")
+            gradcam_url = f"/api/v1/gradcam/{gradcam_filename}" if gradcam_filename else None
 
         duration = round(time.perf_counter() - start, 3)
 

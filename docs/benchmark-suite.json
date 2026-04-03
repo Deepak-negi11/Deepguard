@@ -1,0 +1,60 @@
+[
+  {
+    "key": "news_short_real_government_statement",
+    "mode": "news",
+    "title": "Short real policy statement",
+    "input_kind": "text",
+    "expected_verdict": "likely real",
+    "text": "Government officials confirmed the new infrastructure bill passed with bipartisan support after months of negotiations in parliament on Thursday.",
+    "url": null,
+    "sample_path": null,
+    "required": true,
+    "notes": [
+      "Short factual text benchmark for the fine-tuned news model.",
+      "Preferred over full copied articles for demo and regression checks."
+    ]
+  },
+  {
+    "key": "news_short_fake_sensational_claim",
+    "mode": "news",
+    "title": "Short fake sensational claim",
+    "input_kind": "text",
+    "expected_verdict": "likely fake",
+    "text": "SHOCKING: Scientists confirm 5G towers cause cancer. Government hiding truth. Big Pharma suppressing cure. Share before deleted!",
+    "url": null,
+    "sample_path": null,
+    "required": true,
+    "notes": [
+      "Regression case for sensational fake-news wording.",
+      "Use this to confirm the model still separates obvious fake text from neutral reporting."
+    ]
+  },
+  {
+    "key": "image_c2pa_sample_optional",
+    "mode": "image",
+    "title": "Optional image provenance sample",
+    "input_kind": "file",
+    "expected_verdict": "likely fake",
+    "text": null,
+    "url": null,
+    "sample_path": "sample_assets/image/chatgpt-watermarked-sample.png",
+    "required": false,
+    "notes": [
+      "Optional local benchmark. Add a known AI-generated image with intact provenance if you want image regression checks."
+    ]
+  },
+  {
+    "key": "audio_clone_sample_optional",
+    "mode": "audio",
+    "title": "Optional voice-clone sample",
+    "input_kind": "file",
+    "expected_verdict": "likely fake",
+    "text": null,
+    "url": null,
+    "sample_path": "sample_assets/audio/voice-clone-sample.wav",
+    "required": false,
+    "notes": [
+      "Optional local benchmark. Add a known synthetic sample to include audio in the regression suite."
+    ]
+  }
+]

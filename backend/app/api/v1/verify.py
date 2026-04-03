@@ -23,10 +23,6 @@ ALLOWED_UPLOADS = {
         "extensions": {".jpg", ".jpeg", ".png", ".webp"},
         "content_types": {"image/jpeg", "image/png", "image/webp"},
     },
-    "audio": {
-        "extensions": {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg"},
-        "content_types": {"audio/wav", "audio/x-wav", "audio/mpeg", "audio/mp4", "audio/aac", "audio/flac", "audio/ogg"},
-    },
 }
 
 
@@ -39,19 +35,6 @@ def _content_signature_matches(*, mode: str, extension: str, content: bytes) -> 
         if extension == ".webp":
             return content.startswith(b"RIFF") and content[8:12] == b"WEBP"
         return True
-
-    if extension == ".wav":
-        return len(content) >= 12 and content[:4] == b"RIFF" and content[8:12] == b"WAVE"
-    if extension == ".mp3":
-        return content.startswith(b"ID3") or (len(content) >= 2 and content[0] == 0xFF and (content[1] & 0xE0) == 0xE0)
-    if extension == ".m4a":
-        return len(content) >= 12 and content[4:8] == b"ftyp"
-    if extension == ".aac":
-        return len(content) >= 2 and content[0] == 0xFF and (content[1] & 0xF0) == 0xF0
-    if extension == ".flac":
-        return content.startswith(b"fLaC")
-    if extension == ".ogg":
-        return content.startswith(b"OggS")
     return True
 
 
@@ -109,20 +92,6 @@ def _dispatch_verification(*, background_tasks: BackgroundTasks, task_input: Ver
             from app.tasks.image_tasks import analyze_image_task
 
             analyze_image_task.apply_async(
-                kwargs={
-                    "request_id": task_input.request_id,
-                    "file_name": task_input.file_name,
-                    "content_type": task_input.content_type,
-                    "file_path": task_input.file_path,
-                },
-                task_id=task_input.task_id,
-            )
-            return
-
-        if task_input.request_type == "audio":
-            from app.tasks.audio_tasks import analyze_audio_task
-
-            analyze_audio_task.apply_async(
                 kwargs={
                     "request_id": task_input.request_id,
                     "file_name": task_input.file_name,
@@ -202,51 +171,6 @@ def verify_image(request: Request, background_tasks: BackgroundTasks, file: Uplo
     )
     return TaskQueuedResponse(task_id=task_id, request_id=db_request.id, status="queued", message="Image queued for analysis")
 
-
-@router.post("/audio", response_model=TaskQueuedResponse, status_code=status.HTTP_202_ACCEPTED)
-def verify_audio(background_tasks: BackgroundTasks, file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> TaskQueuedResponse:
-    head = file.file.read(4096)
-    if not head:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Uploaded file is empty")
-    file.file.seek(0)
-    safe_name, content_type = _validate_upload(mode="audio", file_name=file.filename, content_type=file.content_type, content=head)
-
-    request = VerificationRequest(user_id=user.id, request_type="audio", status="pending", file_name=safe_name)
-    db.add(request)
-    db.commit()
-    db.refresh(request)
-    task_id = request.id
-
-    max_upload_bytes = settings.max_upload_mb * 1024 * 1024
-    try:
-        file_path, _ = store_upload_stream(
-            request_id=request.id,
-            request_type="audio",
-            file_name=safe_name,
-            source=file.file,
-            max_bytes=max_upload_bytes,
-        )
-    except ValueError as exc:
-        if str(exc) == "upload_too_large":
-            raise HTTPException(
-                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                detail=f"Upload exceeds the {settings.max_upload_mb} MB limit",
-            ) from exc
-        raise
-
-    job_store.create(StoredJob(task_id=task_id, request_id=request.id, status="queued", progress=5, current_step="Audio queued"))
-    _dispatch_verification(
-        background_tasks=background_tasks,
-        task_input=VerificationTaskInput(
-            task_id=task_id,
-            request_id=request.id,
-            request_type="audio",
-            file_name=safe_name,
-            content_type=content_type,
-            file_path=file_path,
-        ),
-    )
-    return TaskQueuedResponse(task_id=task_id, request_id=request.id, status="queued", message="Audio queued for analysis")
 
 
 @router.post("/news", response_model=TaskQueuedResponse, status_code=status.HTTP_202_ACCEPTED)

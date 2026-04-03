@@ -1,0 +1,61 @@
+{
+  "generated_at": "2026-03-23T16:42:33.473697+00:00",
+  "total": 4,
+  "passed": 2,
+  "failed": 0,
+  "skipped": 2,
+  "results": [
+    {
+      "key": "news_short_real_government_statement",
+      "mode": "news",
+      "title": "Short real policy statement",
+      "expected_verdict": "likely real",
+      "actual_verdict": "likely real",
+      "status": "passed",
+      "confidence": 0.961,
+      "notes": [
+        "Short factual text benchmark for the fine-tuned news model.",
+        "Preferred over full copied articles for demo and regression checks."
+      ]
+    },
+    {
+      "key": "news_short_fake_sensational_claim",
+      "mode": "news",
+      "title": "Short fake sensational claim",
+      "expected_verdict": "likely fake",
+      "actual_verdict": "likely fake",
+      "status": "passed",
+      "confidence": 0.998,
+      "notes": [
+        "Regression case for sensational fake-news wording.",
+        "Use this to confirm the model still separates obvious fake text from neutral reporting."
+      ]
+    },
+    {
+      "key": "image_c2pa_sample_optional",
+      "mode": "image",
+      "title": "Optional image provenance sample",
+      "expected_verdict": "likely fake",
+      "actual_verdict": null,
+      "status": "skipped",
+      "confidence": null,
+      "notes": [
+        "Optional local benchmark. Add a known AI-generated image with intact provenance if you want image regression checks.",
+        "Sample file missing: sample_assets/image/chatgpt-watermarked-sample.png"
+      ]
+    },
+    {
+      "key": "audio_clone_sample_optional",
+      "mode": "audio",
+      "title": "Optional voice-clone sample",
+      "expected_verdict": "likely fake",
+      "actual_verdict": null,
+      "status": "skipped",
+      "confidence": null,
+      "notes": [
+        "Optional local benchmark. Add a known synthetic sample to include audio in the regression suite.",
+        "Sample file missing: sample_assets/audio/voice-clone-sample.wav"
+      ]
+    }
+  ]
+}

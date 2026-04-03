@@ -10,7 +10,7 @@ from app.services.system_registry import load_benchmark_suite, load_dataset_regi
 router = APIRouter()
 settings = get_settings()
 
-SUPPORTED_MODES = ["image", "news", "audio"]
+SUPPORTED_MODES = ["image", "news"]
 
 SAMPLE_SOURCES = [
     DemoSourceLink(
@@ -30,19 +30,6 @@ SAMPLE_SOURCES = [
         category="image",
         url="https://github.com/ondyari/FaceForensics",
         purpose="Official manipulated-face dataset. Use frames if you need still-image samples.",
-    ),
-    DemoSourceLink(
-        label="ASVspoof 2019",
-        category="audio",
-        url="https://datashare.ed.ac.uk/handle/10283/3336",
-        purpose="Official spoofed and bona fide speech dataset for audio demo inputs.",
-    ),
-    DemoSourceLink(
-        label="ElevenLabs voice tools",
-        category="audio",
-        url="https://elevenlabs.io/docs/product/voices/default-voices",
-        purpose="Reference for generating clearly synthetic voice examples for classroom demos.",
-    ),
 ]
 
 

@@ -1,0 +1,53 @@
+[
+  {
+    "key": "image_sdxl_detector",
+    "mode": "image",
+    "display_name": "SDXL Image Detector",
+    "provider": "Hugging Face",
+    "model_id": "Organika/sdxl-detector",
+    "source": "huggingface",
+    "active_version": "organika-sdxl-detector-v1",
+    "weights_path": null,
+    "dataset_version": null,
+    "trained_at": null,
+    "validation_accuracy": null,
+    "notes": [
+      "Used together with C2PA, EXIF, and frequency-based forensic checks.",
+      "Treat as a detector signal, not as stand-alone proof."
+    ]
+  },
+  {
+    "key": "news_roberta_finetuned",
+    "mode": "news",
+    "display_name": "RoBERTa Fake News Classifier",
+    "provider": "Local fine-tune on Hugging Face base",
+    "model_id": "hamzab/roberta-fake-news-classification",
+    "source": "local_weights",
+    "active_version": "roberta-fakenews-v1",
+    "weights_path": "ml_models/weights/fake_news/hamzab-roberta-fake-news-classification",
+    "dataset_version": "final_dataset_v4.csv",
+    "trained_at": "2026-03-23",
+    "validation_accuracy": 0.6933,
+    "notes": [
+      "Fine-tuned for the current DeepGuard news workflow.",
+      "Best used on short claim-style text rather than full-length copied articles."
+    ]
+  },
+  {
+    "key": "audio_wav2vec2_detector",
+    "mode": "audio",
+    "display_name": "Audio Spoof Detector",
+    "provider": "Hugging Face",
+    "model_id": "facebook/wav2vec2-base",
+    "source": "huggingface",
+    "active_version": "wav2vec2-audio-v1",
+    "weights_path": null,
+    "dataset_version": null,
+    "trained_at": null,
+    "validation_accuracy": null,
+    "notes": [
+      "Audio output should be interpreted as supportive evidence only.",
+      "Future work should benchmark against ASVspoof-style evaluation sets."
+    ]
+  }
+]

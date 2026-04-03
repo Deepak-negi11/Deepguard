@@ -20,6 +20,13 @@ except ImportError:
     def compute_noise_uniformity(path): return 0.5
     def compute_frequency_anomaly(path): return 0.5
 
+# Grad-CAM — optional, fails gracefully
+try:
+    from ml_models.image_deepfake_detector.gradcam import generate_gradcam as _generate_gradcam
+except ImportError:
+    def _generate_gradcam(image_path, hf_model_name="Organika/sdxl-detector"):
+        return None
+
 _pipeline = None
 
 def _get_ml_pipeline():
@@ -112,17 +119,21 @@ def predict_image(image_path: str) -> dict:
     noise_score = compute_noise_uniformity(image_path)
     freq_score = compute_frequency_anomaly(image_path)
     exif_res = check_exif_anomaly(image_path)
-    
+
+    # Grad-CAM — runs async-safe in same process, returns filename or None
+    gradcam_filename = _generate_gradcam(image_path, hf_model_name="Organika/sdxl-detector")
+
     breakdown = [
         {"signal_name": "ML Model", "label": final_label, "confidence": final_confidence, "raw": label_raw},
         {"signal_name": "FFT Frequency Analysis", "score": freq_score},
         {"signal_name": "Noise Uniformity (Laplacian)", "score": noise_score},
         exif_res
     ]
-    
+
     return {
         "label": final_label,
         "confidence": final_confidence,
         "primary_source": "ML Model",
-        "breakdown": breakdown
+        "breakdown": breakdown,
+        "gradcam_filename": gradcam_filename,
     }

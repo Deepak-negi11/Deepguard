@@ -43,7 +43,7 @@ class EvidenceItem(BaseModel):
 
 
 class AnalysisInputProfile(BaseModel):
-    mode: Literal["image", "news", "audio"]
+    mode: Literal["image", "news"]
     filename: str | None = None
     content_type: str | None = None
     size_bytes: int | None = None
@@ -107,14 +107,14 @@ class DemoDatasetEntry(BaseModel):
 
 class DemoSourceLink(BaseModel):
     label: str
-    category: Literal["news", "image", "audio", "general"]
+    category: Literal["news", "image", "general"]
     url: str
     purpose: str
 
 
 class ModelRegistryEntry(BaseModel):
     key: str
-    mode: Literal["image", "news", "audio"]
+    mode: Literal["image", "news"]
     display_name: str
     provider: str
     model_id: str
@@ -128,7 +128,7 @@ class ModelRegistryEntry(BaseModel):
 
 
 class ModelStatusEntry(BaseModel):
-    mode: Literal["image", "news", "audio"]
+    mode: Literal["image", "news"]
     analyzer_family: str
     source: Literal["prototype", "local_weights", "huggingface"]
     model_id: str
@@ -140,7 +140,7 @@ class ModelStatusEntry(BaseModel):
 
 class BenchmarkCaseEntry(BaseModel):
     key: str
-    mode: Literal["image", "news", "audio"]
+    mode: Literal["image", "news"]
     title: str
     input_kind: Literal["text", "file"]
     expected_verdict: Literal["likely real", "likely fake", "uncertain"]
@@ -154,7 +154,7 @@ class BenchmarkCaseEntry(BaseModel):
 class SystemStatusResponse(BaseModel):
     app_name: str
     environment: str
-    supported_modes: list[Literal["image", "news", "audio"]]
+    supported_modes: list[Literal["image", "news"]]
     demo_analyzers_enabled: bool
     celery_workers_enabled: bool
     upload_storage: str
