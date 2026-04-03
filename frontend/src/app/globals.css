@@ -43,40 +43,32 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 82% 16%, rgba(145, 232, 255, 0.82), transparent 0, transparent 21%, rgba(52, 93, 255, 0.28) 38%, transparent 62%),
-    radial-gradient(circle at 22% 38%, rgba(81, 119, 255, 0.42), transparent 0, transparent 18%, rgba(59, 96, 255, 0.24) 34%, transparent 58%),
-    radial-gradient(circle at 18% 82%, rgba(122, 154, 255, 0.28), transparent 0, transparent 16%, rgba(40, 63, 145, 0.2) 34%, transparent 56%),
-    linear-gradient(180deg, hsl(var(--background)) 0%, #040817 44%, #08112c 100%);
   font-family: var(--font-body), Arial, sans-serif;
   color: hsl(var(--foreground));
   overflow-x: hidden;
+  /* bg9 as fixed full-page background */
+  background: url('/bg9.jpg') center center / cover no-repeat fixed;
+  background-color: #030810;
 }
 
+/* very light bottom vignette only — lets bg9 show clearly */
 body::before {
   content: "";
   position: fixed;
-  inset: -12% -8% auto auto;
-  width: min(52vw, 820px);
-  height: min(72vh, 980px);
-  background: radial-gradient(circle, rgba(142, 216, 255, 0.9) 0%, rgba(88, 130, 255, 0.55) 24%, rgba(10, 20, 54, 0.04) 66%, transparent 72%);
-  filter: blur(26px);
-  opacity: 0.92;
+  inset: 0;
+  background:
+    linear-gradient(to bottom,
+      rgba(0, 0, 0, 0.18) 0%,
+      rgba(0, 0, 0, 0.08) 40%,
+      rgba(0, 0, 0, 0.32) 80%,
+      rgba(0, 0, 0, 0.55) 100%
+    );
   pointer-events: none;
   z-index: -2;
 }
 
 body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 30%, transparent 70%, rgba(146, 187, 255, 0.06)),
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.02) 0 1px, transparent 1px 3px);
-  mix-blend-mode: screen;
-  opacity: 0.18;
-  pointer-events: none;
-  z-index: -1;
+  content: none;
 }
 
 a {
@@ -97,15 +89,12 @@ main {
   position: relative;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display), sans-serif;
+  letter-spacing: -0.02em;
 }
 
+/* ─── Glass utilities ─── */
 .deepglass {
   background: linear-gradient(180deg, hsl(var(--card) / 0.86), rgba(5, 10, 26, 0.62));
   border: 1px solid hsl(var(--border) / 0.9);
@@ -161,3 +150,58 @@ h6 {
   border-color: hsl(var(--primary) / 0.3);
   box-shadow: inset 0 0 20px hsl(var(--primary) / 0.05), var(--glow-primary);
 }
+
+/* ─── Entrance animations ─── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(151, 177, 255, 0.1), 0 12px 40px rgba(85, 124, 255, 0.28); }
+  50%      { box-shadow: 0 0 0 2px rgba(151, 177, 255, 0.2), 0 16px 56px rgba(85, 124, 255, 0.42); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.7s ease-out both;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out both;
+}
+
+.animate-slide-left {
+  animation: slideInLeft 0.7s ease-out both;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* staggered delays */
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-500 { animation-delay: 0.5s; }
+.delay-600 { animation-delay: 0.6s; }
+.delay-700 { animation-delay: 0.7s; }

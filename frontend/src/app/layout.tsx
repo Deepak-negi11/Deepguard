@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter, Space_Grotesk } from 'next/font/google';
+import { Inter, Space_Grotesk, Outfit } from 'next/font/google';
 import type { ReactNode } from 'react';
 
 import './globals.css';
@@ -19,15 +19,22 @@ const fontDisplay = Space_Grotesk({
   display: 'swap',
 });
 
+const fontHeadline = Outfit({
+  subsets: ['latin'],
+  variable: '--font-headline',
+  display: 'swap',
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
+});
+
 export const metadata: Metadata = {
-  title: 'DeepGuard',
-  description: 'Investigate suspicious images and news with a forensic editorial workflow.',
+  title: 'DeepGuard — AI-Powered Deepfake Detection',
+  description: 'Investigate suspicious images and news with a forensic editorial workflow. Advanced verification for manipulated media.',
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${fontBody.variable} ${fontDisplay.variable} text-paper antialiased`}>
+      <body className={`${fontBody.variable} ${fontDisplay.variable} ${fontHeadline.variable} text-paper antialiased flex min-h-screen flex-col`} suppressHydrationWarning>
         <AuthSessionSync />
         <a
           href="#main-content"
@@ -36,7 +43,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
           Skip to content
         </a>
         <SiteHeader />
-        <main id="main-content">{children}</main>
+        <main id="main-content" className="flex-1">{children}</main>
         <SiteFooter />
       </body>
     </html>
