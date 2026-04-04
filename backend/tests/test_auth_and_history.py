@@ -207,7 +207,9 @@ def test_results_endpoint_falls_back_to_persisted_payload_when_job_store_is_empt
 
         background_tasks = BackgroundTasks()
         queued = verify_news(
-            NewsVerifyRequest(text="Neutral report text with enough length to satisfy validation and no dramatic claims."),
+            NewsVerifyRequest(
+                text="Neutral report text with enough length to satisfy validation and no dramatic claims."
+            ),
             background_tasks=background_tasks,
             db=db,
             user=user,

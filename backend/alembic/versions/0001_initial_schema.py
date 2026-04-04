@@ -47,7 +47,12 @@ def upgrade() -> None:
     op.create_table(
         "verification_results",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("request_id", sa.String(length=36), sa.ForeignKey("verification_requests.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "request_id",
+            sa.String(length=36),
+            sa.ForeignKey("verification_requests.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("authenticity_score", sa.Float(), nullable=False),
         sa.Column("verdict", sa.String(length=32), nullable=False),
         sa.Column("confidence", sa.Float(), nullable=False),
@@ -62,7 +67,9 @@ def upgrade() -> None:
     op.create_table(
         "evidence_items",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("result_id", sa.Integer(), sa.ForeignKey("verification_results.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "result_id", sa.Integer(), sa.ForeignKey("verification_results.id", ondelete="CASCADE"), nullable=False
+        ),
         sa.Column("category", sa.String(length=50), nullable=False),
         sa.Column("severity", sa.String(length=20), nullable=False),
         sa.Column("description", sa.Text(), nullable=False),
@@ -75,7 +82,12 @@ def upgrade() -> None:
     op.create_table(
         "stored_analysis_payloads",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("request_id", sa.String(length=36), sa.ForeignKey("verification_requests.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "request_id",
+            sa.String(length=36),
+            sa.ForeignKey("verification_requests.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("payload", sa.JSON(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.UniqueConstraint("request_id"),

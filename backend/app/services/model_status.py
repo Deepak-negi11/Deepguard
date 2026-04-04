@@ -57,7 +57,9 @@ def build_model_status() -> list[ModelStatusEntry]:
             local_weights_path=str(_NEWS_WEIGHTS) if news_has_local else None,
             warmup_on_startup=settings.warm_news_model_on_startup and settings.enable_celery_workers,
             notes=[
-                "Local fine-tuned checkpoint detected." if news_has_local else "Falls back to the Hugging Face base checkpoint.",
+                "Local fine-tuned checkpoint detected."
+                if news_has_local
+                else "Falls back to the Hugging Face base checkpoint.",
                 "Confidence is model confidence, not a proof of authenticity.",
             ],
         ),

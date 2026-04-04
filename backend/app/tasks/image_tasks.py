@@ -19,17 +19,17 @@ def strip_and_save(path: str) -> str:
         # Load existing exif, if it fails or doesn't exist, we just save without it
         if "exif" in img.info:
             piexif.load(img.info.get("exif", b""))
-        
+
         # In a real scenario, you might preserve specific tags needed for heuristic analysis,
         # but here we wipe it to an empty dict as requested in the plan.
         safe_exif = piexif.dump({})
-        
+
         # Save the image, overwriting the original file
         img.save(path, exif=safe_exif)
         logger.info(f"Stripped EXIF metadata from {path}")
     except Exception as exc:
         logger.warning(f"Failed to strip EXIF from {path}: {exc}")
-    
+
     return path
 
 
@@ -40,11 +40,12 @@ def strip_and_save(path: str) -> str:
     time_limit=360,
     autoretry_for=(Exception,),
     retry_backoff=True,
-    name="deepguard.image.analyze"
+    name="deepguard.image.analyze",
 )
-def analyze_image_task(self: Any, *, request_id: str, file_name: str, content_type: str | None = None, file_path: str | None = None) -> None:
+def analyze_image_task(
+    self: Any, *, request_id: str, file_name: str, content_type: str | None = None, file_path: str | None = None
+) -> None:
 
-    
     run_request_analysis(
         VerificationTaskInput(
             task_id=request_id,

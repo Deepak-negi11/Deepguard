@@ -54,12 +54,7 @@ def _fetch_url_text(url: str, timeout_seconds: float = 8.0) -> str:
     with httpx.Client(
         follow_redirects=True,
         timeout=timeout_seconds,
-        headers={
-            "User-Agent": (
-                "DeepGuard/0.1 (+https://github.com/) "
-                "teacher-demo article ingestion"
-            )
-        },
+        headers={"User-Agent": ("DeepGuard/0.1 (+https://github.com/) teacher-demo article ingestion")},
     ) as client:
         response = client.get(url)
         response.raise_for_status()

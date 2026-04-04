@@ -28,6 +28,7 @@ class BinaryArtifactInput:
 
 def analyze_news(*, text: str, url: str | None = None) -> AnalysisPayload:
     import logging
+
     logger = logging.getLogger(__name__)
     logger.info(f"analyze_news called: enable_demo_analyzers={settings.enable_demo_analyzers}")
     if settings.enable_demo_analyzers:
@@ -76,7 +77,13 @@ def _analyze_news_demo(*, text: str, url: str | None = None) -> AnalysisPayload:
     source_score = 0.72 if source_domain else 0.48
     rhetoric_score = _clamp(0.22 + sensational_hits * 0.11 + exclamation_score * 0.2 + min(all_caps_words, 4) * 0.08)
     cross_reference_score = _clamp(0.38 + source_score * 0.35 - rhetoric_score * 0.22 - length_score * 0.15)
-    fake_score = _clamp(0.18 + rhetoric_score * 0.42 + length_score * 0.18 + (1.0 - source_score) * 0.22 + (1.0 - cross_reference_score) * 0.18)
+    fake_score = _clamp(
+        0.18
+        + rhetoric_score * 0.42
+        + length_score * 0.18
+        + (1.0 - source_score) * 0.22
+        + (1.0 - cross_reference_score) * 0.18
+    )
 
     verdict, confidence = _score_to_verdict(fake_score)
     authenticity_score = round(1.0 - fake_score, 3)
@@ -88,7 +95,10 @@ def _analyze_news_demo(*, text: str, url: str | None = None) -> AnalysisPayload:
                 category="rhetoric",
                 severity="medium" if sensational_hits < 3 else "high",
                 description="Sensational or urgency-heavy phrasing increases manipulation risk.",
-                details={"matched_terms": sensational_hits, "sample_terms": ", ".join(sorted(term for term in urgency_terms if term in combined_text)[:4])},
+                details={
+                    "matched_terms": sensational_hits,
+                    "sample_terms": ", ".join(sorted(term for term in urgency_terms if term in combined_text)[:4]),
+                },
                 visualization_hint="credibility_heatmap",
             )
         )
@@ -153,7 +163,13 @@ def _analyze_news_model(*, text: str, url: str | None = None) -> AnalysisPayload
     confidence = prediction.get("confidence", 0.0)
     anomalies = prediction.get("anomalies", [])
 
-    verdict = "likely real" if classification == "REAL" and confidence > 0.6 else "likely fake" if classification == "FAKE" and confidence > 0.6 else "uncertain"
+    verdict = (
+        "likely real"
+        if classification == "REAL" and confidence > 0.6
+        else "likely fake"
+        if classification == "FAKE" and confidence > 0.6
+        else "uncertain"
+    )
     if classification == "REAL":
         authenticity_score = confidence
     elif classification == "FAKE":
@@ -184,7 +200,7 @@ def _analyze_news_model(*, text: str, url: str | None = None) -> AnalysisPayload
         authenticity_score=round(authenticity_score, 3),
         verdict=verdict,
         confidence=round(confidence, 3),
-        summary=f"DeepGuard classified the text as {classification} with model confidence {confidence*100:.1f}%.",
+        summary=f"DeepGuard classified the text as {classification} with model confidence {confidence * 100:.1f}%.",
         disclaimer="Model confidence is supportive evidence, not proof of authenticity.",
         breakdown={
             "text_analysis_confidence": round(confidence, 3),
@@ -235,23 +251,23 @@ def _analyze_binary_artifact_demo(payload: BinaryArtifactInput) -> AnalysisPaylo
         # Check EXIF (demo)
         # Note: In a real flow, if EXIF is stripped for privacy before analysis, we would extract these signals
         # beforehand. Here we simulate finding missing/software tags.
-        has_camera_metadata = marker_signal > 0.4 # simulated
-        has_ai_software_tag = marker_signal > 0.8 # simulated
+        has_camera_metadata = marker_signal > 0.4  # simulated
+        has_ai_software_tag = marker_signal > 0.8  # simulated
         noise_uniformity = _clamp(0.2 + entropy_signal * 0.4)
         dct_double_compression = _clamp(0.1 + (1.0 - size_signal) * 0.3)
-        
+
         exif_penalty = 0.3 if not has_camera_metadata else 0.0
         exif_penalty += 0.5 if has_ai_software_tag else 0.0
-        
+
         artifact_score = _clamp((noise_uniformity * 0.6) + (dct_double_compression * 0.4))
         fake_score = _clamp(artifact_score * 0.5 + exif_penalty * 0.5)
-        
+
         analyzer_family = "prototype-image-heuristics"
         recommended_actions = [
             "Check for missing EXIF metadata (e.g., camera make/model).",
             "Perform an Error Level Analysis (ELA) or noise residual scan to detect manipulation.",
         ]
-        
+
         evidence = [
             EvidenceItem(
                 category="EXIF Metadata",
@@ -273,7 +289,7 @@ def _analyze_binary_artifact_demo(payload: BinaryArtifactInput) -> AnalysisPaylo
                 description="Double JPEG compression artifacts from DCT coefficient histograms.",
                 details={"dct_anomaly_score": round(dct_double_compression, 3)},
                 visualization_hint="dct_histogram",
-            )
+            ),
         ]
         breakdown = {
             "exif_anomaly": round(exif_penalty, 3),
@@ -330,55 +346,71 @@ def _analyze_binary_artifact_model(payload: BinaryArtifactInput) -> AnalysisPayl
             for item in breakdown_array:
                 sig_name = item.get("signal_name")
                 if sig_name == "C2PA/Watermark detected":
-                    evidence.append(EvidenceItem(
-                        category="C2PA Watermark",
-                        severity="high",
-                        description=f"AI generation watermark detected: {item.get('marker')}",
-                        details=item,
-                        visualization_hint="metadata_table"
-                    ))
+                    evidence.append(
+                        EvidenceItem(
+                            category="C2PA Watermark",
+                            severity="high",
+                            description=f"AI generation watermark detected: {item.get('marker')}",
+                            details=item,
+                            visualization_hint="metadata_table",
+                        )
+                    )
                     breakdown["c2pa_detected"] = 1.0
                 elif sig_name == "ML Model":
-                    evidence.append(EvidenceItem(
-                        category="ML Model Analysis",
-                        severity="high" if confidence > 0.7 else "medium",
-                        description=f"Model classified as {classification} with {confidence:.1%} confidence.",
-                        details=item,
-                        visualization_hint="confidence_gauge"
-                    ))
+                    evidence.append(
+                        EvidenceItem(
+                            category="ML Model Analysis",
+                            severity="high" if confidence > 0.7 else "medium",
+                            description=f"Model classified as {classification} with {confidence:.1%} confidence.",
+                            details=item,
+                            visualization_hint="confidence_gauge",
+                        )
+                    )
                     breakdown["ml_model_confidence"] = round(item.get("confidence", 0.0), 3)
                 elif sig_name == "FFT Frequency Analysis":
                     score = item.get("score", 0.0)
-                    evidence.append(EvidenceItem(
-                        category="Frequency Analysis",
-                        severity="medium" if score > 0.5 else "low",
-                        description="FFT analysis of frequency spectrum anomalies.",
-                        details=item,
-                        visualization_hint="dct_histogram"
-                    ))
+                    evidence.append(
+                        EvidenceItem(
+                            category="Frequency Analysis",
+                            severity="medium" if score > 0.5 else "low",
+                            description="FFT analysis of frequency spectrum anomalies.",
+                            details=item,
+                            visualization_hint="dct_histogram",
+                        )
+                    )
                     breakdown["frequency_artifact_score"] = round(score, 3)
                 elif sig_name == "Noise Uniformity (Laplacian)":
                     score = item.get("score", 0.0)
-                    evidence.append(EvidenceItem(
-                        category="Noise Uniformity",
-                        severity="medium" if score > 0.5 else "low",
-                        description="Laplacian variance uniformity check.",
-                        details=item,
-                        visualization_hint="noise_residual_heatmap"
-                    ))
+                    evidence.append(
+                        EvidenceItem(
+                            category="Noise Uniformity",
+                            severity="medium" if score > 0.5 else "low",
+                            description="Laplacian variance uniformity check.",
+                            details=item,
+                            visualization_hint="noise_residual_heatmap",
+                        )
+                    )
                     breakdown["noise_pattern_score"] = round(score, 3)
                 elif sig_name == "EXIF Anomaly":
                     anom = item.get("is_anomalous", False)
-                    evidence.append(EvidenceItem(
-                        category="EXIF Metadata",
-                        severity="high" if anom else "low",
-                        description=item.get("detail", "EXIF status"),
-                        details=item,
-                        visualization_hint="metadata_table"
-                    ))
+                    evidence.append(
+                        EvidenceItem(
+                            category="EXIF Metadata",
+                            severity="high" if anom else "low",
+                            description=item.get("detail", "EXIF status"),
+                            details=item,
+                            visualization_hint="metadata_table",
+                        )
+                    )
                     breakdown["exif_anomaly"] = 1.0 if anom else 0.0
 
-            verdict = "likely real" if classification == "REAL" and confidence > 0.6 else "likely fake" if classification == "FAKE" and confidence > 0.6 else "uncertain"
+            verdict = (
+                "likely real"
+                if classification == "REAL" and confidence > 0.6
+                else "likely fake"
+                if classification == "FAKE" and confidence > 0.6
+                else "uncertain"
+            )
             authenticity_score = confidence if classification == "REAL" else (1.0 - confidence)
 
             model_family = "organika/sdxl-detector"
@@ -391,7 +423,7 @@ def _analyze_binary_artifact_model(payload: BinaryArtifactInput) -> AnalysisPayl
             authenticity_score=round(authenticity_score, 3),
             verdict=verdict,
             confidence=round(confidence, 3),
-            summary=f"DeepGuard analyzed the {payload.request_type} using a 3-layer detection pipeline and concluded it is {classification} with {confidence*100:.1f}% confidence.",
+            summary=f"DeepGuard analyzed the {payload.request_type} using a 3-layer detection pipeline and concluded it is {classification} with {confidence * 100:.1f}% confidence.",
             disclaimer=f"Analyzed using {model_family}. Real-world accuracy ~85-90%.",
             breakdown=breakdown,
             evidence=evidence,

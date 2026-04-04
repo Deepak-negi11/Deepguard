@@ -21,7 +21,7 @@ celery_app = Celery(
     include=[
         "app.tasks.image_tasks",
         "app.tasks.news_tasks",
-    ]
+    ],
 )
 
 

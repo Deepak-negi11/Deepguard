@@ -89,7 +89,7 @@ def poll_for_result(client, headers, task_id, mode):
 
         data = resp.json()
         status = data.get("status")
-        print(f"  [{i*2}s] Status={status} | Step={data.get('current_step', '')} | Progress={data.get('progress')}%")
+        print(f"  [{i * 2}s] Status={status} | Step={data.get('current_step', '')} | Progress={data.get('progress')}%")
 
         if status == "completed":
             result = data.get("result", {})

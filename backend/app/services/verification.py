@@ -86,6 +86,7 @@ def run_request_analysis(task_input: VerificationTaskInput) -> None:
         )
     except Exception as exc:
         import traceback
+
         traceback.print_exc()
         if request := db.get(VerificationRequest, task_input.request_id):
             request.status = "failed"
@@ -109,7 +110,9 @@ def _persist_result(*, db, request_id: str, result_payload: AnalysisPayload) -> 
         if existing_result is not None:
             db.delete(existing_result)
 
-        existing_snapshot = db.scalar(select(StoredAnalysisPayload).where(StoredAnalysisPayload.request_id == request_id))
+        existing_snapshot = db.scalar(
+            select(StoredAnalysisPayload).where(StoredAnalysisPayload.request_id == request_id)
+        )
         if existing_snapshot is not None:
             db.delete(existing_snapshot)
 

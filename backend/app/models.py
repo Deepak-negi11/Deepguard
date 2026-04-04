@@ -35,7 +35,9 @@ class VerificationRequest(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     user: Mapped[User] = relationship(back_populates="requests")
-    result: Mapped[VerificationResult | None] = relationship(back_populates="request", uselist=False, cascade="all, delete-orphan")
+    result: Mapped[VerificationResult | None] = relationship(
+        back_populates="request", uselist=False, cascade="all, delete-orphan"
+    )
 
 
 class VerificationResult(Base):
@@ -78,7 +80,9 @@ class StoredAnalysisPayload(Base):
     __tablename__ = "stored_analysis_payloads"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    request_id: Mapped[str] = mapped_column(ForeignKey("verification_requests.id", ondelete="CASCADE"), unique=True, index=True)
+    request_id: Mapped[str] = mapped_column(
+        ForeignKey("verification_requests.id", ondelete="CASCADE"), unique=True, index=True
+    )
     payload: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

@@ -11,7 +11,9 @@ router = APIRouter()
 
 
 @router.get("", response_model=HistoryResponse)
-def get_history(limit: int = 20, offset: int = 0, db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> HistoryResponse:  # noqa: B008
+def get_history(
+    limit: int = 20, offset: int = 0, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+) -> HistoryResponse:  # noqa: B008
     query = (
         select(VerificationRequest)
         .where(VerificationRequest.user_id == user.id)
@@ -20,7 +22,10 @@ def get_history(limit: int = 20, offset: int = 0, db: Session = Depends(get_db),
         .limit(limit)
     )
     rows = db.scalars(query).all()
-    total = db.scalar(select(func.count()).select_from(VerificationRequest).where(VerificationRequest.user_id == user.id)) or 0
+    total = (
+        db.scalar(select(func.count()).select_from(VerificationRequest).where(VerificationRequest.user_id == user.id))
+        or 0
+    )
     items = [
         HistoryItem(
             request_id=row.id,

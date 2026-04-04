@@ -119,8 +119,15 @@ def _dispatch_verification(*, background_tasks: BackgroundTasks, task_input: Ver
 
 MAX_IMAGE_SIZE_MB = 10
 
+
 @router.post("/image", response_model=TaskQueuedResponse, status_code=status.HTTP_202_ACCEPTED)
-def verify_image(request: Request, background_tasks: BackgroundTasks, file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> TaskQueuedResponse:  # noqa: B008
+def verify_image(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> TaskQueuedResponse:  # noqa: B008
     if file.size and file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
@@ -132,7 +139,9 @@ def verify_image(request: Request, background_tasks: BackgroundTasks, file: Uplo
     if not head:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Uploaded file is empty")
     file.file.seek(0)
-    safe_name, content_type = _validate_upload(mode="image", file_name=file.filename, content_type=file.content_type, content=head)
+    safe_name, content_type = _validate_upload(
+        mode="image", file_name=file.filename, content_type=file.content_type, content=head
+    )
 
     db_request = VerificationRequest(user_id=user.id, request_type="image", status="pending", file_name=safe_name)
     db.add(db_request)
@@ -157,7 +166,9 @@ def verify_image(request: Request, background_tasks: BackgroundTasks, file: Uplo
             ) from exc
         raise
 
-    job_store.create(StoredJob(task_id=task_id, request_id=db_request.id, status="queued", progress=5, current_step="Image queued"))
+    job_store.create(
+        StoredJob(task_id=task_id, request_id=db_request.id, status="queued", progress=5, current_step="Image queued")
+    )
     _dispatch_verification(
         background_tasks=background_tasks,
         task_input=VerificationTaskInput(
@@ -169,12 +180,18 @@ def verify_image(request: Request, background_tasks: BackgroundTasks, file: Uplo
             file_path=file_path,
         ),
     )
-    return TaskQueuedResponse(task_id=task_id, request_id=db_request.id, status="queued", message="Image queued for analysis")
-
+    return TaskQueuedResponse(
+        task_id=task_id, request_id=db_request.id, status="queued", message="Image queued for analysis"
+    )
 
 
 @router.post("/news", response_model=TaskQueuedResponse, status_code=status.HTTP_202_ACCEPTED)
-def verify_news(payload: NewsVerifyRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> TaskQueuedResponse:  # noqa: B008
+def verify_news(
+    payload: NewsVerifyRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> TaskQueuedResponse:  # noqa: B008
     if not payload.text and not payload.url:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Provide article text or a URL")
 
@@ -197,7 +214,11 @@ def verify_news(payload: NewsVerifyRequest, background_tasks: BackgroundTasks, d
     db.commit()
     db.refresh(request)
     task_id = request.id
-    job_store.create(StoredJob(task_id=task_id, request_id=request.id, status="queued", progress=5, current_step="News article queued"))
+    job_store.create(
+        StoredJob(
+            task_id=task_id, request_id=request.id, status="queued", progress=5, current_step="News article queued"
+        )
+    )
     _dispatch_verification(
         background_tasks=background_tasks,
         task_input=VerificationTaskInput(
@@ -208,4 +229,6 @@ def verify_news(payload: NewsVerifyRequest, background_tasks: BackgroundTasks, d
             url=resolved.url,
         ),
     )
-    return TaskQueuedResponse(task_id=task_id, request_id=request.id, status="queued", message="News item queued for analysis")
+    return TaskQueuedResponse(
+        task_id=task_id, request_id=request.id, status="queued", message="News item queued for analysis"
+    )

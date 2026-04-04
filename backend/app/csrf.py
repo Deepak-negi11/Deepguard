@@ -34,4 +34,3 @@ def enforce_csrf(request: Request) -> None:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="CSRF validation failed",
         )
-

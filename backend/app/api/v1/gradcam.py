@@ -2,6 +2,7 @@
 Grad-CAM heatmap file serving endpoint.
 Serves PNG heatmaps generated during image analysis from /uploads/gradcam/.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
