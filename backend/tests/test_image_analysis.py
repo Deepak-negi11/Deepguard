@@ -1,6 +1,8 @@
 from fastapi.testclient import TestClient
 
+from app.database import SessionLocal
 from app.main import app
+from app.models import User
 
 client = TestClient(app)
 
@@ -10,12 +12,16 @@ client = TestClient(app)
 def test_image_upload_endpoint(monkeypatch):
     """Test that a valid image upload is accepted and task is queued."""
 
+    db = SessionLocal()
+    user = User(email="image-test@example.com", password_hash="hashed")
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    db.close()
+
     # Mock authentication completely for simplicity
     def mock_get_current_user():
-        class MockUser:
-            id = 1
-
-        return MockUser()
+        return user
 
     from app.api.v1.verify import get_current_user
 
@@ -40,11 +46,15 @@ def test_image_upload_endpoint(monkeypatch):
 
 
 def test_invalid_upload_signature():
-    def mock_get_current_user():
-        class MockUser:
-            id = 1
+    db = SessionLocal()
+    user = User(email="invalid-image-test@example.com", password_hash="hashed")
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    db.close()
 
-        return MockUser()
+    def mock_get_current_user():
+        return user
 
     from app.api.v1.verify import get_current_user
 
@@ -57,9 +67,8 @@ def test_invalid_upload_signature():
 
     app.dependency_overrides = {}
 
-    # Only verify validation actually rejects it before auth/db issues come up
-    # 400 Bad Request indicates it didn't pass signature mismatch
-    assert response.status_code in (400, 401)
+    # Signature mismatch is surfaced as unsupported media for the claimed image type.
+    assert response.status_code == 415
 
 
 def test_exif_stripping(tmp_path):
@@ -126,29 +135,28 @@ def test_inference_pipeline(monkeypatch, tmp_path):
     # Check the schema
     assert "label" in res
     assert "confidence" in res
-    assert "signals" in res
-    assert "gradcam_overlay_url" in res
+    assert "breakdown" in res
+    assert "gradcam_filename" in res
     assert "primary_source" in res
 
     # Check label values
-    assert res["label"] in ("ai_generated", "authentic", "unknown")
+    assert res["label"] in ("FAKE", "REAL", "UNKNOWN")
 
     # Check confidence sanity
     assert isinstance(res["confidence"], float)
     assert 0.0 <= res["confidence"] <= 1.0
 
-    # Check signals structure
-    signals = res["signals"]
-    assert "c2pa_watermark" in signals
-    assert "ml_model" in signals
-    assert "exif_anomaly" in signals
-    assert "noise_pattern_score" in signals
-    assert "frequency_artifact_score" in signals
+    # Check breakdown structure
+    breakdown = res["breakdown"]
+    assert isinstance(breakdown, list)
+    signal_names = {item["signal_name"] for item in breakdown}
+    assert "ML Model" in signal_names
+    assert "EXIF Anomaly" in signal_names
+    assert "Noise Uniformity (Laplacian)" in signal_names
+    assert "FFT Frequency Analysis" in signal_names
 
-    # Check ML model sub-signals
-    ml = signals["ml_model"]
-    assert ml["model_id"] == "Ateeqq/ai-vs-human-image-detector"
-    assert ml["label"] in ("ai_generated", "authentic", "unknown")
+    ml_signal = next(item for item in breakdown if item["signal_name"] == "ML Model")
+    assert ml_signal["label"] in ("FAKE", "REAL", "UNKNOWN")
 
-    # Grad-CAM should be None (removed)
-    assert res["gradcam_overlay_url"] is None
+    # Grad-CAM filename should be absent/None in tests.
+    assert res["gradcam_filename"] is None

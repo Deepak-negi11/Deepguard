@@ -10,7 +10,7 @@ from app.services.system_registry import load_benchmark_suite, load_dataset_regi
 router = APIRouter()
 settings = get_settings()
 
-SUPPORTED_MODES = ["image", "news"]
+SUPPORTED_MODES = ["image", "news", "audio"]
 
 SAMPLE_SOURCES = [
     DemoSourceLink(

@@ -7,10 +7,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
 
-# Ensure parent directory is in path for ml_models imports (Celery workers)
-_APP_ROOT = Path(__file__).resolve().parent.parent.parent
-if str(_APP_ROOT) not in sys.path:
-    sys.path.insert(0, str(_APP_ROOT))
+# Ensure project root is in path for ml_models imports (Celery workers, local tests)
+_BACKEND_ROOT = Path(__file__).resolve().parents[2]
+_PROJECT_ROOT = _BACKEND_ROOT if (_BACKEND_ROOT / "ml_models").exists() else _BACKEND_ROOT.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
 
 from app.config import get_settings  # noqa: E402
 from app.schemas import AnalysisInputProfile, AnalysisPayload, EvidenceItem  # noqa: E402

@@ -10,22 +10,12 @@ from app.api.v1.history import get_history
 from app.api.v1.results import get_result
 from app.api.v1.system import get_system_status
 from app.api.v1.verify import _validate_upload, verify_news
-from app.database import Base, SessionLocal, engine
+from app.database import SessionLocal
 from app.models import ApiUsage, User
 from app.schemas import LoginRequest, NewsVerifyRequest, RegisterRequest
 from app.services.analyzers import _analyze_news_model
 from app.services.job_store import job_store
 from app.services.usage_logger import log_api_usage
-
-
-@pytest.fixture(autouse=True)
-def reset_database() -> None:
-    job_store.clear()
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
-    yield
-    job_store.clear()
-    Base.metadata.drop_all(bind=engine)
 
 
 def _run_background_tasks(background_tasks: BackgroundTasks) -> None:

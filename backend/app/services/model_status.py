@@ -36,6 +36,14 @@ def build_model_status() -> list[ModelStatusEntry]:
                 warmup_on_startup=False,
                 notes=["Prototype heuristics are active instead of the RoBERTa classifier."],
             ),
+            ModelStatusEntry(
+                mode="audio",
+                analyzer_family="prototype-audio-heuristics",
+                source="prototype",
+                model_id="prototype-audio-heuristics",
+                local_weights_available=False,
+                notes=["Audio remains experimental and is not surfaced in the current frontend flow."],
+            ),
         ]
 
     news_has_local = _has_model_config(_NEWS_WEIGHTS)
@@ -61,6 +69,17 @@ def build_model_status() -> list[ModelStatusEntry]:
                 if news_has_local
                 else "Falls back to the Hugging Face base checkpoint.",
                 "Confidence is model confidence, not a proof of authenticity.",
+            ],
+        ),
+        ModelStatusEntry(
+            mode="audio",
+            analyzer_family="wav2vec2-audio-detector",
+            source="huggingface",
+            model_id="facebook/wav2vec2-base",
+            local_weights_available=False,
+            notes=[
+                "Audio remains experimental and is not surfaced in the current frontend flow.",
+                "Interpret audio outputs as supportive evidence only.",
             ],
         ),
     ]
